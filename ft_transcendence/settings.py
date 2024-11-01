@@ -11,9 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+APP_SECRET_KEY = config('APP_SECRET_KEY')
 
 
 # Quick-start development settings - unsuitable for production
@@ -35,6 +37,7 @@ INSTALLED_APPS = [
 	'daphne',
 	'main',
 	'game',
+    'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -110,6 +113,13 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'leehack3006@gmail.com'  # 이메일 계정
+EMAIL_HOST_PASSWORD = APP_SECRET_KEY     # 계정 앱 비밀번호
 
 
 # Password validation

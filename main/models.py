@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+import pyotp, base64
 
 class UserManager(BaseUserManager):
     def create_user(self, email, username=None, password=None, **extra_fields):
@@ -33,6 +34,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)           # 활성화 상태
     is_staff = models.BooleanField(default=False)           # 직원 권한 여부
     profile = models.TextField(null=True, blank=True)       # 프로필 정보
+    otp_key = models.CharField(max_length=32, default=pyotp.random_base32)  # OTP 키
+    is_otp_verified = models.BooleanField(default=False)  # 2FA 인증 여부
 
     objects = UserManager()  # 커스텀 매니저
 
