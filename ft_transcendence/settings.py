@@ -16,6 +16,7 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 APP_SECRET_KEY = config('APP_SECRET_KEY')
+APP_EMAIL = config('APP_EMAIL')
 
 
 # Quick-start development settings - unsuitable for production
@@ -44,7 +45,27 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
 ]
+
+# REST Framework와 Simple JWT 설정
+from datetime import timedelta
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',  # 세션 인증
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT 인증
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # JWT 만료 시간 설정
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 ASGI_APPLICATION = 'ft_transcendence.asgi.application'
 
@@ -118,7 +139,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'leehack3006@gmail.com'  # 이메일 계정
+EMAIL_HOST_USER = APP_EMAIL  # 이메일 계정
 EMAIL_HOST_PASSWORD = APP_SECRET_KEY     # 계정 앱 비밀번호
 
 
