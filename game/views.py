@@ -12,7 +12,13 @@ User = get_user_model()
 waiting_players = []
 
 @login_required
-def game_room(request, room_name):
+def room(request):
+    if not request.user.is_otp_verified:
+        return redirect('login')
+    return render(request, 'game/room.html')
+
+@login_required
+def game(request, room_name):
     if not request.user.is_otp_verified:
         return redirect('login')
     context = {'room_name': room_name}

@@ -1,10 +1,11 @@
-# main/urls.py
 from django.urls import path
 from . import views
 
+app_name = 'game'
+
 urlpatterns = [
-    path('online/solo/<str:room_name>/', views.game_room, name='game_room'),  # room_name에 따른 게임방 연결
-    path('torunament/solo/', views.torunament, name='torunament'),  # room_name에 따른 게임방 연결
-    path('torunament/solo/game', views.torunament_game, name='torunament_game'),  # room_name에 따른 게임방 연결
-	# path('update-score/', views.update_score, name='update_score'),
+    path('online/room', views.room, name='room'),  # room_name에 따른 게임방 연결
+    path('online/room/<str:room_name>/', views.game, name='online_game'),  # room_name에 따른 게임방 연결
+    path('local/torunament/', views.torunament, name='torunament'),  # room_name에 따른 게임방 연결
+    path('local/torunament/game', views.torunament_game, name='torunament_game'),  # room_name에 따른 게임방 연결
 ]

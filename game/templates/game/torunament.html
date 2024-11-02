@@ -490,7 +490,7 @@
             localStorage.setItem('currentMatch', 'semifinal1');
             localStorage.setItem('player1', tournamentState.nicknames[1]);
             localStorage.setItem('player2', tournamentState.nicknames[2]);
-            window.location.href = '/game/torunament/solo/game';
+            window.location.href = '/game/local/torunament/game';
         });
 
         document.getElementById('startSemifinal2').addEventListener('click', function() {
@@ -501,14 +501,14 @@
             localStorage.setItem('currentMatch', 'semifinal2');
             localStorage.setItem('player1', tournamentState.nicknames[3]);
             localStorage.setItem('player2', tournamentState.nicknames[4]);
-            window.location.href = '/game/torunament/solo/game';
+            window.location.href = '/game/local/torunament/game';
         });
 
         document.getElementById('startFinal').addEventListener('click', function() {
             localStorage.setItem('currentMatch', 'final');
             localStorage.setItem('player1', tournamentState.semifinal1Winner);
             localStorage.setItem('player2', tournamentState.semifinal2Winner);
-            window.location.href = '/game/torunament/solo/game';
+            window.location.href = '/game/local/torunament/game';
         });
 
         // 게임 결과 처리

@@ -57,6 +57,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',  # 세션 인증
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT 인증
     ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.TemplateHTMLRenderer', # 디버깅 용
+        'rest_framework.renderers.JSONRenderer',
+    ),
 }
 
 SIMPLE_JWT = {

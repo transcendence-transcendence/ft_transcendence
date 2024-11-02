@@ -19,7 +19,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authentication import SessionAuthentication, BaseAuthentication
 from django.http import HttpResponseRedirect
 from datetime import timedelta
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, APIException
 
 User = get_user_model()
 
@@ -94,15 +94,6 @@ class JWTAuthenticationWithSessionAndCookie(BaseAuthentication):
         # 세션과 JWT가 모두 인증된 경우 인증된 사용자와 토큰 반환
         return (user, validated_token)
 
-class SensitiveAPIView(APIView):
-    # 인증 클래스로 JWTAuthenticationWithSessionAndCookie 사용
-    authentication_classes = [JWTAuthenticationWithSessionAndCookie]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        # 인증된 사용자의 민감한 데이터 반환
-        return Response({"data": "Sensitive information only accessible with both JWT and session authentication"})
-
 def signup(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -114,13 +105,31 @@ def signup(request):
         form = CustomUserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
-@login_required
-def two_factor_auth(request):
-    user = request.user
-    totp = pyotp.TOTP(user.otp_key)
+from rest_framework.exceptions import PermissionDenied, APIException
+from rest_framework.renderers import TemplateHTMLRenderer
+
+class TwoFactorAuthView(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    authentication_classes = [JWTAuthenticationWithSessionAndCookie]
+    permission_classes = [IsAuthenticated]
+
+    def handle_exception(self, exc):
+        # 403 Forbidden 예외가 발생할 경우 custom permission_denied 메서드 호출
+        if isinstance(exc, PermissionDenied):
+            return self.permission_denied(self.request, message=str(exc))
+        # 그 외 예외는 기본 동작을 따름
+        return super().handle_exception(exc)
+
+    def permission_denied(self, request, message=None, code=None):
+        # 403 Forbidden 에러 시 사용자 정의 HTML 렌더o
+        context = {'detail': message or "Session authentication or JWT token required."}
+        # return redirect('home')
+        return render(request, 'main/permission_denied.html', context, status=403)
 
     # GET 요청 시: OTP 코드 생성 및 이메일 전송
-    if request.method == 'GET':
+    def get(self, request):
+        user = request.user
+        totp = pyotp.TOTP(user.otp_key)
 
         # 이전 메시지 초기화
         storage = get_messages(request)
@@ -136,7 +145,10 @@ def two_factor_auth(request):
         return render(request, 'main/two_factor_auth.html')
 
     # POST 요청 시: 사용자가 입력한 OTP 검증
-    elif request.method == 'POST':
+    def post(self, request):
+        user = request.user
+        totp = pyotp.TOTP(user.otp_key)
+
         otp_code = request.POST.get('otp_code')
         generated_otp = request.session.get('otp_generated_time')  # 세션에서 GET 요청 시 생성된 OTP 가져오기
         
@@ -156,11 +168,7 @@ def two_factor_auth(request):
         else:
             messages.error(request, 'Invalid OTP code. Please try again.')
 
-    return render(request, 'main/two_factor_auth.html')
-
-@login_required
-def check_otp_status(request):
-    return JsonResponse({"is_otp_verified": request.user.is_otp_verified})
+        return render(request, 'main/two_factor_auth.html')
 
 def home(request):
     return render(request, 'main/home.html')

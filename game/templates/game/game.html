@@ -73,7 +73,7 @@
 
         // WebSocket 연결
         const gameSocket = new WebSocket(
-            'ws://' + window.location.host + '/ws/game/online/solo/{{ room_name }}/'
+            'ws://' + window.location.host + '/ws/game/online/room/{{ room_name }}/'
         );
 
         gameSocket.onmessage = function(e) {
