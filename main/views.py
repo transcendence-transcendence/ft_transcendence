@@ -105,7 +105,7 @@ def signup(request):
         form = CustomUserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
-from rest_framework.exceptions import PermissionDenied, APIException
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.renderers import TemplateHTMLRenderer
 
 class TwoFactorAuthView(APIView):
