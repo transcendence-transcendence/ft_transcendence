@@ -259,8 +259,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                     self.room_group_name,
                     {
                         'type': 'game_over',
-                        'winner': winner,
-                        'location': '/'
+                        'winner': winner
                     }
                 )
                 if self.room_group_name in game_states:
@@ -308,7 +307,8 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def game_over(self, event):
         await self.send(text_data=json.dumps({
             'type': 'game_over',
-            'winner': event['winner']
+            'winner': event['winner'],
+            'location': '/'
         }))
 
     async def players_ready(self, event):

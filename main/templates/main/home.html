@@ -29,6 +29,7 @@
     {% else %}
       <a href="{% url 'signup' %}" class="btn btn-primary btn-lg mb-2">Sign Up</a>
       <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Login</a>
+      <a href="{% url 'oauth_login' %}" class="btn btn-primary btn-lg mt-2">OAuth Login</a>
     {% endif %}
 
     {% if user.is_otp_verified and user.is_authenticated %}
