@@ -3,7 +3,8 @@ import json
 import asyncio
 import time
 from asgiref.sync import sync_to_async
-from main.models import User, Game
+def some_function():
+    from main.models import User, Game
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 # 게임 상태를 관리하는 클래스
