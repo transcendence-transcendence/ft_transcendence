@@ -5,10 +5,11 @@ services:
     image: postgres:15
     container_name: postgres_container
     restart: always
+# .env의 값을 바로 이용할 수 없어서 이렇게 사용
     environment:
-      POSTGRES_DB: ft_transcendence
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ${HOME}/data/postgre:/var/lib/postgresql/data
     ports:
@@ -29,6 +30,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${HOME}/data/staticfiles:/app/staticfiles:ro
     depends_on:
       - transcendence
 
@@ -39,10 +41,10 @@ services:
     container_name: transcendence_container
     restart: always
     environment:
-      DATABASE_URL: postgres://admin:admin@postgres:5432/ft_transcendence
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      DJANGO_SETTINGS_MODULE: ft_transcendence.settings
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
     volumes:
       - ${HOME}/data/staticfiles:/app/staticfiles
     ports:

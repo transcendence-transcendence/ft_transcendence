@@ -23,7 +23,7 @@ APP_EMAIL = config('APP_EMAIL')
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*530@7fvp4aih4i0v44p2dn4c%)z!3a0s!#j%j&qc*@nd6$hu2'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -116,9 +116,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'ft_transcendence',      # 생성한 데이터베이스 이름
-        'USER': 'admin',                # 생성한 PostgreSQL 사용자 이름
-        'PASSWORD': 'admin',        # PostgreSQL 사용자 비밀번호
-        'HOST': 'postgres_container',             # 로컬에서 실행 중이므로 localhost 사용
+        'USER': config('POSTGRES_USER'),          # 생성한 PostgreSQL 사용자 이름
+        'PASSWORD': config('POSTGRES_PASSWORD'),  # PostgreSQL 사용자 비밀번호
+        'HOST': 'postgres_container',             # 로컬에서 실행 중이므로 localhost 사용-> postgres_container
         'PORT': '5432',                  # PostgreSQL 기본 포트
     }
 }
@@ -189,5 +189,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # 정적 파일을 저장할 디렉터리 경로 설정
-STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(os.path.expanduser('~'), 'data', 'staticfiles')
