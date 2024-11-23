@@ -10,8 +10,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - ${HOME}/data/postgre:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -39,25 +38,15 @@ services:
       dockerfile: Dockerfile
     container_name: transcendence_container
     restart: always
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             daphne -b 0.0.0.0 -p 8000 ft_transcendence.asgi:application"
     environment:
-      APP_SECRET_KEY: your_secret_app_key_here
-      APP_EMAIL: your_email@example.com
       DATABASE_URL: postgres://admin:admin@postgres:5432/ft_transcendence
       REDIS_HOST: redis
       REDIS_PORT: 6379
       DJANGO_SETTINGS_MODULE: ft_transcendence.settings
     volumes:
-      - .:/app
-      - ./staticfiles:/app/staticfiles
+      - ${HOME}/data/staticfiles:/app/staticfiles
     ports:
       - "8000:8000"
     depends_on:
       - postgres
       - redis
-
-volumes:
-  postgres_data:

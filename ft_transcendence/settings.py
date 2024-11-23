@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from decouple import config
 
@@ -190,4 +190,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # 정적 파일을 저장할 디렉터리 경로 설정
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(os.path.expanduser('~'), 'data', 'staticfiles')
