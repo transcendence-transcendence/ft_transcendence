@@ -1,0 +1,1925 @@
+### game/templates/game/room.html
+```
+<!-- templates/main/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main Page</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #007bff;
+    }
+
+    .room-form {
+      width: 100%;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container d-flex flex-column justify-content-center align-items-center vh-100">
+    <div class="room-form">
+      <h2 class="text-center mb-4">Enter Room Name</h2>
+      <form id="roomForm" class="mb-3">
+        <div class="form-group">
+          <input type="text" 
+                 id="roomName" 
+                 class="form-control form-control-lg" 
+                 placeholder="Enter room name"
+                 required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Start Game</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('roomForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const roomName = document.getElementById('roomName').value.trim();
+      if (roomName) {
+        window.location.href = `/game/online/room/${roomName}/`;
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+### game/templates/game/torunament_game.html
+```
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수정된 2인용 탁구 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        #scoreBoard {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .particle {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('scoreBoard');
+  
+        // 게임 객체
+        const ball = {
+            x: 0,
+            y: 0,
+            radius: 10,
+            speed: 5,
+            dx: 5,
+            dy: 5
+        };
+
+        const paddle1 = {
+            x: 0,
+            y: canvas.height / 2 - 50,
+            width: 10,
+            height: 100,
+            dy: 7,
+            score: 0
+        };
+
+        const paddle2 = {
+            x: canvas.width - 10,
+            y: canvas.height / 2 - 50,
+            width: 10,
+            height: 100,
+            dy: 7,
+            score: 0
+        };
+
+        const powerUp = {
+            x: 0,
+            y: 0,
+            radius: 15,
+            active: false,
+            type: ''
+        };
+
+        const keys = {
+            w: false,
+            s: false,
+            ArrowUp: false,
+            ArrowDown: false
+        };
+
+        // 키 이벤트 처리
+        document.addEventListener('keydown', (e) => {
+            if (e.key in keys) {
+                keys[e.key] = true;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key in keys) {
+                keys[e.key] = false;
+            }
+        });
+
+        // 패들 움직임
+        function movePaddles() {
+            if (keys.w && paddle1.y > 0) paddle1.y -= paddle1.dy;
+            if (keys.s && paddle1.y < canvas.height - paddle1.height) paddle1.y += paddle1.dy;
+            if (keys.ArrowUp && paddle2.y > 0) paddle2.y -= paddle2.dy;
+            if (keys.ArrowDown && paddle2.y < canvas.height - paddle2.height) paddle2.y += paddle2.dy;
+        }
+
+        // 충돌 감지
+        function detectCollision() {
+            // 벽과의 충돌
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+                createParticles(ball.x, ball.y, 10);
+            }
+
+            // 패들과의 충돌
+            if (
+                (ball.x - ball.radius < paddle1.x + paddle1.width && ball.y > paddle1.y && ball.y < paddle1.y + paddle1.height) ||
+                (ball.x + ball.radius > paddle2.x && ball.y > paddle2.y && ball.y < paddle2.y + paddle2.height)
+            ) {
+                ball.dx *= -1;
+                increaseBallSpeed();
+                randomizeBallDirection();
+                createParticles(ball.x, ball.y, 20);
+            }
+
+            // 점수 계산
+            if (ball.x + ball.radius > canvas.width) {
+                paddle1.score++;
+                resetBall(2);
+                shrinkPaddle(paddle1);
+            } else if (ball.x - ball.radius < 0) {
+                paddle2.score++;
+                resetBall(1);
+                shrinkPaddle(paddle2);
+            }
+
+            // 파워업과의 충돌
+            if (powerUp.active && Math.hypot(ball.x - powerUp.x, ball.y - powerUp.y) < ball.radius + powerUp.radius) {
+                applyPowerUp();
+                createParticles(powerUp.x, powerUp.y, 30);
+            }
+
+            updateScore();
+        }
+
+        // 공 리셋
+        function resetBall(player) {
+            if (player === 1) {
+                ball.x = paddle1.x + paddle1.width + ball.radius;
+                ball.y = Math.random() * (canvas.height - ball.radius * 2) + ball.radius;
+                ball.dx = Math.abs(ball.dx);
+            } else {
+                ball.x = paddle2.x - ball.radius;
+                ball.y = Math.random() * (canvas.height - ball.radius * 2) + ball.radius;
+                ball.dx = -Math.abs(ball.dx);
+            }
+            ball.dy = (Math.random() - 0.5) * 10;
+            ball.speed = Math.hypot(ball.dx, ball.dy);
+        }
+
+         // 게임 결과를 저장하고 메인 페이지로 돌아가는 함수
+         function endGame(winner) {
+            localStorage.setItem('matchResult', 'completed');
+            localStorage.setItem('winner', winner);
+            window.location.href = '/game/torunament';
+        }
+
+        // 플레이어 이름 가져오기
+        const player1Name = localStorage.getItem('player1');
+        const player2Name = localStorage.getItem('player2');
+        
+        // 스코어보드 텍스트 업데이트
+        const updateScoreBoard = () => {
+            scoreBoard.textContent = `${player1Name}: ${paddle1.score} | ${player2Name}: ${paddle2.score}`;
+        };
+
+        // 게임 종료 조건 수정
+        function checkGameEnd() {
+            if (paddle1.score === 5) {
+                endGame(player1Name);
+                return true;
+            } else if (paddle2.score === 5) {
+                endGame(player2Name);
+                return true;
+            }
+            return false;
+        }
+
+		function getCsrfToken() {
+            return document.getElementById('csrfToken').value;
+        }
+	const csrfToken = "{{ csrf_token }}";
+        // 점수 업데이트
+        function updateScore() {
+            updateScoreBoard();
+            if (checkGameEnd()) {
+                paddle1.score = 0;
+                paddle2.score = 0;
+                resetPaddles();
+            }
+        }
+
+
+        // 공 속도 증가
+        function increaseBallSpeed() {
+            ball.speed += 0.2;
+            const angle = Math.atan2(ball.dy, ball.dx);
+            ball.dx = ball.speed * Math.cos(angle);
+            ball.dy = ball.speed * Math.sin(angle);
+        }
+
+        // 공 방향 랜덤화
+        function randomizeBallDirection() {
+            const angle = Math.atan2(ball.dy, ball.dx);
+            const newAngle = angle + (Math.random() - 0.5) * Math.PI / 4;
+            ball.dx = ball.speed * Math.cos(newAngle);
+            ball.dy = ball.speed * Math.sin(newAngle);
+        }
+
+        // 패들 크기 감소
+        function shrinkPaddle(paddle) {
+            paddle.height = Math.max(30, paddle.height - 10);
+        }
+
+        // 패들 리셋
+        function resetPaddles() {
+            paddle1.height = 100;
+            paddle2.height = 100;
+        }
+
+        // 파워업 생성
+        function createPowerUp() {
+            if (!powerUp.active) {
+                powerUp.x = Math.random() * (canvas.width - 100) + 50;
+                powerUp.y = Math.random() * (canvas.height - 100) + 50;
+                powerUp.active = true;
+                powerUp.type = Math.random() < 0.5 ? 'speed' : 'size';
+            }
+        }
+
+        // 파워업 적용
+        function applyPowerUp() {
+            if (powerUp.type === 'speed') {
+                ball.speed *= 0.8;
+                const angle = Math.atan2(ball.dy, ball.dx);
+                ball.dx = ball.speed * Math.cos(angle);
+                ball.dy = ball.speed * Math.sin(angle);
+            } else if (powerUp.type === 'size') {
+                paddle1.height = Math.min(150, paddle1.height + 20);
+                paddle2.height = Math.min(150, paddle2.height + 20);
+            }
+            powerUp.active = false;
+        }
+
+        // 파티클 생성
+        function createParticles(x, y, amount) {
+            for (let i = 0; i < amount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.width = `${Math.random() * 4 + 2}px`;
+                particle.style.height = particle.style.width;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                const dx = Math.cos(angle) * speed;
+                const dy = Math.sin(angle) * speed;
+                
+                document.body.appendChild(particle);
+                
+                let opacity = 1;
+                const animate = () => {
+                    if (opacity <= 0) {
+                        particle.remove();
+                        return;
+                    }
+                    
+                    opacity -= 0.02;
+                    particle.style.opacity = opacity;
+                    particle.style.left = `${parseFloat(particle.style.left) + dx}px`;
+                    particle.style.top = `${parseFloat(particle.style.top) + dy}px`;
+                    
+                    requestAnimationFrame(animate);
+                };
+                
+                animate();
+            }
+        }
+
+        // 게임 루프
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            movePaddles();
+
+            // 공 그리기
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.closePath();
+
+            // 패들 그리기
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
+            ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
+
+            // 파워업 그리기
+            if (powerUp.active) {
+                ctx.beginPath();
+                ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
+                ctx.fillStyle = powerUp.type === 'speed' ? '#00ffff' : '#ff00ff';
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            // 공 이동
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            detectCollision();
+
+            // 랜덤하게 파워업 생성
+            if (Math.random() < 0.002) {
+                createPowerUp();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        resetBall(Math.random() < 0.5 ? 1 : 2);
+        gameLoop();
+    </script>
+</body>
+</html>
+```
+
+### game/templates/game/_game.html
+```
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2인용 탁구 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            font-family: 'Arial', sans-serif;
+        }
+        #gameCanvas {
+            border: 2px solid #fff;
+        }
+        #scoreBoard {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+        #countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="countdown">3</div>
+    <div id="waitMessage">Please wait for 3 seconds...</div>
+    <button id="readyButton">I'm Ready!</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('scoreBoard');
+        const countdownDiv = document.getElementById('countdown');
+        const waitMessageDiv = document.getElementById('waitMessage');
+        const readyButton = document.getElementById('readyButton');
+        let isGameStarted = false;
+        let isReady = false;
+        let gameOverSent = false;
+
+        // 서버에서 받아온 플레이어 정보 (Django 템플릿 변수)
+        const player1 = "{{ player1.username }}";  // 'root'
+        const player2 = "{{ player2.username }}";  // 'testuser'
+        const currentUser = "{{ request.user.username }}";  // 현재 접속한 사용자
+
+        let player1Score = 0;
+        let player2Score = 0;
+
+        // 공의 속성 추가
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            speed: 5,
+            dx: 5,
+            dy: 4
+        };
+
+        // 패들 속성
+        const paddle1 = {
+            x: 0,
+            y: canvas.height / 2 - 50,
+            width: 10,
+            height: 100,
+            dy: 7
+        };
+
+        const paddle2 = {
+            x: canvas.width - 10,
+            y: canvas.height / 2 - 50,
+            width: 10,
+            height: 100,
+            dy: 7
+        };
+
+        // WebSocket 연결
+        const gameSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/game/{{ room_name }}/'
+        );
+
+
+        // 서버에서 게임 상태 수신 시 복원
+        gameSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === 'wait') {
+                waitMessageDiv.style.display = 'block';  // 대기 메시지 표시
+            }
+
+            if (data.type === 'game_state') {
+                waitMessageDiv.style.display = 'none';
+                restoreGameState(data.data);  // 게임 상태 복원
+            }
+
+            // 게임 시작 신호
+            if (data.type === 'start_game') {
+                // startCountdown(3, function() {
+                    isGameStarted = true;
+                    // countdownDiv.style.display = 'none';
+                // });
+            }
+
+            // 게임 시작 전에 움직이지 않도록 설정
+            if (!isGameStarted) return;
+
+            // 패들 이동 처리
+            if (data.type === 'paddle_move') {
+                const player = data.player;
+                const position = data.position;
+                if (player === player1) {
+                    paddle1.y = position;
+                } else if (player === player2) {
+                    paddle2.y = position;
+                }
+            }
+
+            if (data.type === 'score_update') {
+                player1Score = data.player1_score;
+                player2Score = data.player2_score;
+                updateScore();  // 화면에 스코어 반영
+                checkWin();
+            }
+
+            // 공 이동 처리
+            if (data.type === 'ball_move') {
+                moveBall(data.x, data.y, data.dx, data.dy);
+            }
+        };
+
+        // 준비 버튼 클릭 시 준비 상태 전송
+        readyButton.onclick = function() {
+            isReady = !isReady;
+            readyButton.textContent = isReady ? 'Cancel Ready' : 'I\'m Ready!';
+            gameSocket.send(JSON.stringify({
+                'type': 'ready',  // 준비 상태 전송
+                'player': currentUser,
+                'ready': isReady
+            }));
+        };
+
+        // 카운트다운 시작
+        function startCountdown(seconds, callback) {
+            let countdown = seconds;
+            countdownDiv.style.display = 'block';
+            countdownDiv.textContent = countdown;
+
+            const interval = setInterval(function() {
+                countdown--;
+                countdownDiv.textContent = countdown > 0 ? countdown : 'Go!';
+                if (countdown < 0) {
+                    clearInterval(interval);
+                    callback();
+                }
+            }, 1000);
+        }
+
+        // 공 충돌 감지
+        function detectCollision() {
+            // 상하 벽 충돌 시 반사
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+            }
+
+            // 패들 충돌
+            if (
+                (ball.x - ball.radius < paddle1.x + paddle1.width && ball.y > paddle1.y && ball.y < paddle1.y + paddle1.height) ||
+                (ball.x + ball.radius > paddle2.x && ball.y > paddle2.y && ball.y < paddle2.y + paddle2.height)
+            ) {
+                ball.dx *= -1;
+            }
+
+            // 득점 체크
+            // 득점 체크
+        if (ball.x + ball.radius > canvas.width) {
+            player1Score++;
+            resetBall();  // 공 리셋
+            updateScore();
+
+            // 득점 후 카운트다운 다시 시작
+            // startCountdown(3, function() {
+                isGameStarted = false;
+                countdownDiv.style.display = 'none';
+            // });
+
+            // 점수 업데이트를 서버로 전송
+            gameSocket.send(JSON.stringify({
+                'type': 'score_update',
+                'player1_score': player1Score,
+                'player2_score': player2Score
+            }));
+        } else if (ball.x - ball.radius < 0) {
+            player2Score++;
+            resetBall();
+            updateScore();
+
+            // 득점 후 카운트다운 다시 시작
+            // startCountdown(3, function() {
+                isGameStarted = false;
+                countdownDiv.style.display = 'none';
+            // });
+
+            // 점수 업데이트를 서버로 전송
+            gameSocket.send(JSON.stringify({
+                'type': 'score_update',
+                'player1_score': player1Score,
+                'player2_score': player2Score
+            }));
+
+        }
+        }
+
+        // 점수판 업데이트
+        function updateScore() {
+            scoreBoard.textContent = `플레이어 1: ${player1Score} | 플레이어 2: ${player2Score}`;
+        }
+
+        // 공 리셋
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx *= -1;  // 공 방향 반대로
+            isGameStarted = false;  // 득점 후 공은 멈춤
+        }
+
+        // 게임 상태 복원 함수
+        function restoreGameState(gameState) {
+        // 플레이어 상태 복원
+
+        for (const player in gameState.players) {
+            const playerData = gameState.players[player];
+            movePlayer(player, playerData.x, playerData.y);
+
+            // 스코어 복원
+            if (player === player1) {
+                player1Score = playerData.score;
+            } else if (player === player2) {
+                player2Score = playerData.score;
+            }
+
+            // 준비 상태 복원
+            if (player === currentUser) {
+                isReady = playerData.ready;
+                readyButton.textContent = isReady ? 'Cancel Ready' : 'I\'m Ready!';
+            }
+        }
+
+        // 스코어 업데이트 (복원된 상태로 화면에 반영)
+
+        const ballData = gameState.ball;  // 공 상태에 접근하는 부분 수정
+        moveBall(ballData.x, ballData.y, ballData.dx, ballData.dy);
+        isGameStarted = true;
+
+        updateScore();
+
+        // gameLoop()
+        }
+
+        // 공 이동
+        function moveBall(x, y, dx, dy) {
+            ball.x = x;
+            ball.y = y;
+            ball.dx = dx;
+            ball.dy = dy;
+        }
+
+        // 플레이어 이동
+        function movePlayer(player, x, y) {
+            if (player === player1) {
+                paddle1.y = y;
+            } else if (player === player2) {
+                paddle2.y = y;
+            }
+        }
+
+        // 5점 도달 시 서버에 점수 전송
+        function checkWin() {
+            if (player1Score === 5 || player2Score === 5) {
+                const winner = player1Score === 5 ? player1 : player2;
+                if (!gameOverSent) {
+                    gameSocket.send(JSON.stringify({
+                        'type': 'game_over',
+                        'player1': player1,
+                        'player2': player2,
+                        'player1_score': player1Score,
+                        'player2_score': player2Score,
+                        'winner': winner
+                    }));
+                    alert(winner + '가 5점에 도달하여 승리하였습니다!');
+                    gameOverSent = true;
+
+                    // 3초 후 홈 화면으로 이동
+                    setTimeout(() => {
+                        window.location.href = '/';  // 홈 화면 경로로 이동
+                    }, 3000);  // 3초 후 리디렉션
+                }
+            }
+        }
+
+        // 패들 움직임
+        document.addEventListener('keydown', (e) => {
+            if (!isGameStarted) return;  // 게임 시작 전에는 움직일 수 없음
+
+            if (e.key === 'w' && currentUser === player1 && paddle1.y > 0) {
+                paddle1.y -= paddle1.dy;
+                sendPaddlePosition(paddle1.y);
+            }
+            if (e.key === 's' && currentUser === player1 && paddle1.y < canvas.height - paddle1.height) {
+                paddle1.y += paddle1.dy;
+                sendPaddlePosition(paddle1.y);
+            }
+            if (e.key === 'ArrowUp' && currentUser === player2 && paddle2.y > 0) {
+                paddle2.y -= paddle2.dy;
+                sendPaddlePosition(paddle2.y);
+            }
+            if (e.key === 'ArrowDown' && currentUser === player2 && paddle2.y < canvas.height - paddle2.height) {
+                paddle2.y += paddle2.dy;
+                sendPaddlePosition(paddle2.y);
+            }
+        });
+
+        // 패들 위치를 WebSocket으로 서버에 전송
+        function sendPaddlePosition(position) {
+            gameSocket.send(JSON.stringify({
+                'type': 'paddle_move',
+                'player': currentUser,
+                'position': position
+            }));
+        }
+
+        function gameLoop() {
+    if (isGameStarted) {
+        // 공 이동
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        detectCollision();
+
+        // 공의 움직임을 서버로 전송
+        gameSocket.send(JSON.stringify({
+            'type': 'ball_move',
+            'x': ball.x,
+            'y': ball.y,
+            'dx': ball.dx,
+            'dy': ball.dy
+        }));
+    }
+
+    // 화면 그리기
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 공 그리기
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.closePath();
+
+    // 패들 그리기
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
+    ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
+
+    requestAnimationFrame(gameLoop);
+}
+        gameLoop();
+    </script>
+</body>
+</html>
+
+```
+
+### game/templates/game/game copy.html
+```
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>2인용 탁구 게임</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        #gameCanvas {
+            border: 2px solid #fff;
+        }
+        #scoreBoard {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+        #waitMessage {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #fff;
+            text-align: center;
+        }
+        #readyButton {
+            position: absolute;
+            bottom: 20px;
+            font-size: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="waitMessage">게임을 시작하려면 준비 버튼을 눌러주세요.</div>
+    <button id="readyButton">I'm Ready!</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('scoreBoard');
+        const waitMessageDiv = document.getElementById('waitMessage');
+        const readyButton = document.getElementById('readyButton');
+        let isGameStarted = false;
+        let isReady = false;
+
+        // 서버에서 받아온 플레이어 정보 (Django 템플릿 변수)
+        // const player1 = "{{ player1.username|escapejs }}";  // 예: 'root'
+        // const player2 = "{{ player2.username|escapejs }}";  // 예: 'testuser'
+        const currentUser = "{{ request.user.username|escapejs }}";  // 현재 접속한 사용자
+
+        let player1Score = 0;
+        let player2Score = 0;
+
+        // 공의 반지름 설정
+        const ballRadius = 10;
+
+        // 패들 속성
+        const paddleWidth = 10;
+        const paddleHeight = 100;
+
+        // WebSocket 연결
+        const gameSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/game/{{ room_name }}/'
+        );
+
+        gameSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === 'start_game') {
+                isGameStarted = true;
+                waitMessageDiv.style.display = 'none';
+            }
+
+            if (data.type === 'game_state') {
+                const gameState = data.data;
+                restoreGameState(gameState);
+            }
+
+            if (data.type === 'game_over') {
+                const winner = data.winner;
+                alert(winner + '가 5점에 도달하여 승리하였습니다!');
+                // 필요에 따라 리디렉션 또는 추가 처리
+            }
+        };
+
+        // 준비 버튼 클릭 시 준비 상태 전송
+        readyButton.onclick = function() {
+            isReady = !isReady;
+            readyButton.textContent = isReady ? 'Cancel Ready' : 'I\'m Ready!';
+            gameSocket.send(JSON.stringify({
+                'type': 'ready',
+                'player': currentUser,
+                'ready': isReady
+            }));
+        };
+
+        function restoreGameState(gameState) {
+            // 자신의 ready 상태를 확인하여 isReady 변수와 버튼 텍스트를 업데이트
+            const playerData = gameState.players[currentUser];
+            if (playerData.ready) {
+                isReady = playerData.ready;
+                waitMessageDiv.style.display = 'none';
+                readyButton.textContent = isReady ? 'Cancel Ready' : 'I\'m Ready!';
+                gameSocket.send(JSON.stringify({
+                    'type': 'ready',
+                    'player': currentUser,
+                    'ready': isReady
+                }));
+            }
+
+            renderGameState(gameState);
+        }
+
+        function renderGameState(gameState) {
+            // 화면 초기화
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 공 그리기
+            const ballData = gameState.ball;
+            ctx.beginPath();
+            ctx.arc(ballData.x, ballData.y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.closePath();
+
+            // 패들 그리기
+            const paddle1Data = gameState.players[player1];
+            const paddle2Data = gameState.players[player2];
+
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, paddle1Data.y, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - paddleWidth, paddle2Data.y, paddleWidth, paddleHeight);
+
+            // 점수 업데이트
+            player1Score = paddle1Data.score;
+            player2Score = paddle2Data.score;
+            updateScore();
+        }
+
+        // 점수판 업데이트 함수
+        function updateScore() {
+            scoreBoard.textContent = `플레이어 1: ${player1Score} | 플레이어 2: ${player2Score}`;
+        }
+
+        // 패들 움직임 전송
+        document.addEventListener('keydown', (e) => {
+            if (!isGameStarted) return;
+
+            if (currentUser === player1) {
+                if (e.key === 'w') {
+                    sendPaddleMove(-1);
+                }
+                if (e.key === 's') {
+                    sendPaddleMove(1);
+                }
+            }
+
+            if (currentUser === player2) {
+                if (e.key === 'ArrowUp') {
+                    sendPaddleMove(-1);
+                }
+                if (e.key === 'ArrowDown') {
+                    sendPaddleMove(1);
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (!isGameStarted) return;
+
+            if (currentUser === player1) {
+                if (e.key === 'w' || e.key === 's') {
+                    sendPaddleStop();
+                }
+            }
+
+            if (currentUser === player2) {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    sendPaddleStop();
+                }
+            }
+        });
+
+        function sendPaddleMove(direction) {
+            gameSocket.send(JSON.stringify({
+                'type': 'paddle_move',
+                'player': currentUser,
+                'direction': direction
+            }));
+        }
+
+        function sendPaddleStop() {
+            gameSocket.send(JSON.stringify({
+                'type': 'paddle_stop',
+                'player': currentUser
+            }));
+        }
+
+        // 애니메이션 루프
+        function animationLoop() {
+            requestAnimationFrame(animationLoop);
+        }
+
+        animationLoop();
+    </script>
+</body>
+</html>
+
+```
+
+### game/templates/game/game.html
+```
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>3D 탁구 게임</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #1a1a1a;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        #scoreBoard {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            z-index: 100;
+        }
+        #waitMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #fff;
+            text-align: center;
+            z-index: 100;
+        }
+        #readyButton {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
+    <div id="waitMessage">게임을 시작하려면 준비 버튼을 눌러주세요.</div>
+    <button id="readyButton" style="display: none;">I'm Ready!</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Three.js 초기 설정
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true }); // 안티앨리어싱 추가
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x1a1a1a);
+        document.body.appendChild(renderer.domElement);
+
+        // 게임 상태 변수
+        const scoreBoard = document.getElementById('scoreBoard');
+        const waitMessageDiv = document.getElementById('waitMessage');
+        const readyButton = document.getElementById('readyButton');
+        let isGameStarted = false;
+        let isReady = false;
+        
+        const currentUser = "{{ request.user.username|escapejs }}";
+        let player1 = null;
+        let player2 = null;
+        let player1Score = 0;
+        let player2Score = 0;
+
+        // 게임 필드 크기 상수
+        const TABLE_WIDTH = 20;
+        const TABLE_DEPTH = 10;
+        const PADDLE_LIMIT = TABLE_DEPTH / 2 - 1; // 패들 이동 제한
+
+        // Canvas 크기 (서버와 동일하게 설정)
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 400;
+
+        // 서버의 패들 및 공 크기
+        const PADDLE_WIDTH_SERVER = 10;
+        const PADDLE_HEIGHT_SERVER = 100;
+        const BALL_RADIUS_SERVER = 10;
+
+        // 좌표 및 크기 매핑 함수
+        function mapX(x) {
+            return ((x - CANVAS_WIDTH / 2) / (CANVAS_WIDTH / 2)) * (TABLE_WIDTH / 2);
+        }
+
+        function mapZ(y) { // Note: Mapping y to z in the 3D space
+            return ((y - CANVAS_HEIGHT / 2) / (CANVAS_HEIGHT / 2)) * (TABLE_DEPTH / 2);
+        }
+
+        function mapWidth(width) {
+            return (width / CANVAS_WIDTH) * TABLE_WIDTH;
+        }
+
+        function mapDepth(height) {
+            return (height / CANVAS_HEIGHT) * TABLE_DEPTH;
+        }
+
+        // 3D 오브젝트 생성
+        // 탁구대
+        const tableGeometry = new THREE.BoxGeometry(TABLE_WIDTH, 0.5, TABLE_DEPTH);
+        const tableMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x004400,
+            shininess: 60
+        });
+        const table = new THREE.Mesh(tableGeometry, tableMaterial);
+        scene.add(table);
+
+        // 테이블 경계선
+        const borderMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+        const borderGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2),
+            new THREE.Vector3(TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2),
+            new THREE.Vector3(TABLE_WIDTH/2, 0.26, TABLE_DEPTH/2),
+            new THREE.Vector3(-TABLE_WIDTH/2, 0.26, TABLE_DEPTH/2),
+            new THREE.Vector3(-TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2)
+        ]);
+        const borderLine = new THREE.Line(borderGeometry, borderMaterial);
+        scene.add(borderLine);
+
+        // 패들 크기 및 위치 설정
+        const paddleWidth = mapWidth(PADDLE_WIDTH_SERVER);
+        const paddleHeight = 1.5; // Y축 높이 (두께)
+        const paddleDepth = mapDepth(PADDLE_HEIGHT_SERVER);
+
+        const paddleGeometry = new THREE.BoxGeometry(paddleWidth, paddleHeight, paddleDepth);
+        const paddleMaterial1 = new THREE.MeshPhongMaterial({ 
+            color: 0xff0000,
+            shininess: 100
+        });
+        const paddleMaterial2 = new THREE.MeshPhongMaterial({ 
+            color: 0x0000ff,
+            shininess: 100
+        });
+
+        const paddle1 = new THREE.Mesh(paddleGeometry, paddleMaterial1);
+        const paddle2 = new THREE.Mesh(paddleGeometry.clone(), paddleMaterial2);
+
+        // 패들 초기 위치 설정
+        const paddle1X = mapX(PADDLE_WIDTH_SERVER / 2);
+        const paddle2X = mapX(CANVAS_WIDTH - PADDLE_WIDTH_SERVER / 2);
+
+        paddle1.position.set(paddle1X, 1, 0);
+        paddle2.position.set(paddle2X, 1, 0);
+
+        scene.add(paddle1);
+        scene.add(paddle2);
+
+        // 공
+        const ballRadius = (BALL_RADIUS_SERVER / CANVAS_WIDTH) * TABLE_WIDTH;
+        const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
+        const ballMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0xffffff,
+            shininess: 100,
+            emissive: 0x444444 // 발광 효과 추가
+        });
+        const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+        ball.position.y = 1; // 공의 시작 높이 설정
+        scene.add(ball);
+
+        // 조명
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const spotLight = new THREE.SpotLight(0xffffff, 0.8);
+        spotLight.position.set(0, 15, 0);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // 보조 조명 추가
+        const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        frontLight.position.set(0, 5, 15);
+        scene.add(frontLight);
+
+        // 카메라 위치 설정
+        camera.position.set(0, 12, 15); // 카메라 위치 조정
+        camera.lookAt(0, 0, 0);
+
+        // WebSocket 연결
+        const gameSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/game/online/room/{{ room_name }}/'
+        );
+
+        gameSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === 'players_ready') {
+                player1 = data.player1;
+                player2 = data.player2;
+                readyButton.style.display = 'block';
+                waitMessageDiv.textContent = '게임을 시작하려면 준비 버튼을 눌러주세요.';
+            }
+
+            if (data.type === 'start_game') {
+                isGameStarted = true;
+                waitMessageDiv.style.display = 'none';
+            }
+
+            if (data.type === 'game_state') {
+                const gameState = data.data;
+                restoreGameState(gameState);
+            }
+
+            if (data.type === 'game_over') {
+                alert(data.winner + '가 5점에 도달하여 승리하였습니다!');
+                window.location.href = data.location;
+            }
+        };
+
+        window.onload = function() {
+            // 만약 이전에 준비 상태였다면, isReady를 true로 설정
+            // 로컬 스토리지 등을 사용하여 준비 상태를 저장할 수 있음
+            // 예시로는 isReady가 true인지 확인하고 서버에 알림
+            if (isReady) {
+                gameSocket.send(JSON.stringify({
+                    'type': 'ready',
+                    'player': currentUser,
+                    'ready': isReady
+                }));
+            }
+        };
+
+        // 게임 상태 복원
+        function restoreGameState(gameState) {
+            // 자신의 ready 상태를 확인하여 isReady 변수와 버튼 텍스트를 업데이트
+            const playerData = gameState.players[currentUser];
+            if (playerData.ready) {
+                isReady = playerData.ready;
+                waitMessageDiv.style.display = 'none';
+                readyButton.textContent = isReady ? 'Cancel Ready' : 'I\'m Ready!';
+                gameSocket.send(JSON.stringify({
+                    'type': 'ready',
+                    'player': currentUser,
+                    'ready': isReady
+                }));
+            }
+
+            // 3D 오브젝트 위치 업데이트
+            const ballData = gameState.ball;
+            // 서버의 좌표를 클라이언트의 좌표로 변환
+            ball.position.x = mapX(ballData.x);
+            ball.position.z = mapZ(ballData.y);
+            ball.position.y = 1; // 공의 높이 유지
+
+            const paddle1Data = gameState.players[player1];
+            const paddle2Data = gameState.players[player2];
+
+            if (paddle1Data) {
+                // 패들 위치를 테이블 범위 내로 제한
+                const z1 = Math.max(-PADDLE_LIMIT, Math.min(PADDLE_LIMIT, mapZ(paddle1Data.y + PADDLE_HEIGHT_SERVER / 2)));
+                paddle1.position.z = z1;
+                player1Score = paddle1Data.score;
+            }
+
+            if (paddle2Data) {
+                const z2 = Math.max(-PADDLE_LIMIT, Math.min(PADDLE_LIMIT, mapZ(paddle2Data.y + PADDLE_HEIGHT_SERVER / 2)));
+                paddle2.position.z = z2;
+                player2Score = paddle2Data.score;
+            }
+
+            updateScore();
+        }
+
+        function updateScore() {
+            scoreBoard.textContent = `${player1} : ${player1Score} | ${player2} : ${player2Score}`;
+        }
+
+        // 키보드 이벤트 처리
+        document.addEventListener('keydown', (e) => {
+            console.log("hello")
+            if (!isGameStarted) return;
+
+            if (currentUser === player1) {
+                if (e.key === 'w') {
+                    sendPaddleMove(-1);
+                }
+                if (e.key === 's') {
+                    sendPaddleMove(1);
+                }
+            }
+
+            if (currentUser === player2) {
+                if (e.key === 'ArrowUp') {
+                    sendPaddleMove(-1);
+                }
+                if (e.key === 'ArrowDown') {
+                    sendPaddleMove(1);
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (!isGameStarted) return;
+
+            if (currentUser === player1) {
+                if (e.key === 'w' || e.key === 's') {
+                    sendPaddleStop();
+                }
+            }
+
+            if (currentUser === player2) {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    sendPaddleStop();
+                }
+            }
+        });
+
+        function sendPaddleMove(direction) {
+            gameSocket.send(JSON.stringify({
+                'type': 'paddle_move',
+                'player': currentUser,
+                'direction': direction
+            }));
+        }
+
+        function sendPaddleStop() {
+            gameSocket.send(JSON.stringify({
+                'type': 'paddle_stop',
+                'player': currentUser
+            }));
+        }
+
+        // Ready 버튼 이벤트
+        readyButton.onclick = function() {
+            isReady = !isReady;
+            readyButton.textContent = isReady ? 'Cancel Ready' : 'I\'m Ready!';
+            gameSocket.send(JSON.stringify({
+                'type': 'ready',
+                'player': currentUser,
+                'ready': isReady
+            }));
+        };
+
+        // 창 크기 조정 이벤트
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // 애니메이션 루프
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 공 회전 애니메이션
+            if (isGameStarted) {
+                ball.rotation.x += 0.05;
+                ball.rotation.z += 0.05;
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
+
+```
+
+### game/templates/game/torunament.html
+```
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <style>
+        /* 기존 CSS 스타일 유지 */
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            flex-direction: column;
+        }
+
+        .tournament-bracket {
+            display: flex;
+            justify-content: center; /* 중앙 정렬 */
+            align-items: center; /* 중앙 정렬 */
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+
+        .round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            margin-right: 60px;
+            position: relative;
+        }
+
+        .round:last-child {
+            margin-right: 0;
+        }
+
+        .round-title {
+            text-align: center;
+            font-weight: 600;
+            color: #5c6bc0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .match {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .team {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 8px;
+            margin: 8px 0;
+            transition: all 0.3s ease;
+            border: 2px solid #e0e0e0;
+            position: relative;
+            min-width: 200px;
+        }
+
+        .team.winner {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+        }
+
+        .team:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .team-logo {
+            width: 30px;
+            height: 30px;
+            background: #f5f5f5;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .winner .team-logo {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .team-name {
+            font-weight: 500;
+            flex-grow: 1;
+        }
+
+        .team-score {
+            font-weight: bold;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        .connector {
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            width: 60px;
+            height: 2px;
+            background: #e0e0e0;
+        }
+
+        .connector::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -100px;
+            width: 2px;
+            height: 200px;
+            background: #e0e0e0;
+        }
+
+        .round:last-child .connector {
+            display: none;
+        }
+
+        .match-date {
+            position: absolute;
+            top: -30px;
+            width: 100%;  /* 넓이를 100%로 설정하여 가운데 정렬 */
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .champion {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .champion-title {
+            text-align: center;
+            font-weight: 600;
+            color: #f5b100;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .champion-team {
+            background: linear-gradient(135deg, #ffd700 0%, #f5b100 100%);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(245, 177, 0, 0.2);
+            min-width: 200px;
+        }
+
+        .champion-logo {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: white;
+        }
+
+        .champion-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .trophy-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        /* 닉네임 버튼 스타일 */
+        .nickname-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .nickname-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #5c6bc0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .nickname-button:hover {
+            background-color: #3949ab;
+        }
+
+        /* 새로운 스타일 추가 */
+        .team.eliminated {
+            filter: grayscale(100%);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="tournament-bracket">
+        <!-- 4강 -->
+        <div class="round">
+            <div class="round-title">준결승</div>
+            <div class="match" id="semifinal1">
+                <div class="match-date">2024.10.24 19:00</div>
+                <div class="team" id="team1">
+                    <div class="team-logo">1</div>
+                    <div class="team-name">Player 1</div>
+                    <div class="team-score"></div>
+                </div>
+                <div class="team" id="team2">
+                    <div class="team-logo">2</div>
+                    <div class="team-name">Player 2</div>
+                    <div class="team-score"></div>
+                </div>
+                <div class="connector"></div>
+            </div>
+            <div class="match" id="semifinal2">
+                <div class="match-date">2024.10.24 21:00</div>
+                <div class="team" id="team3">
+                    <div class="team-logo">3</div>
+                    <div class="team-name">Player 3</div>
+                    <div class="team-score"></div>
+                </div>
+                <div class="team" id="team4">
+                    <div class="team-logo">4</div>
+                    <div class="team-name">Player 4</div>
+                    <div class="team-score"></div>
+                </div>
+                <div class="connector"></div>
+            </div>
+        </div>
+
+        <!-- 결승 -->
+        <div class="round">
+            <div class="round-title">결승전</div>
+            <div class="match" id="final">
+                <div class="match-date">2024.10.27 19:00</div>
+                <div class="team" id="finalist1">
+                    <div class="team-logo">?</div>
+                    <div class="team-name">미정</div>
+                    <div class="team-score"></div>
+                </div>
+                <div class="team" id="finalist2">
+                    <div class="team-logo">?</div>
+                    <div class="team-name">미정</div>
+                    <div class="team-score"></div>
+                </div>
+                <div class="connector"></div>
+            </div>
+        </div>
+
+        <!-- 우승자 -->
+        <div class="round">
+            <div class="round-title">우승팀</div>
+            <div class="champion">
+                <div class="champion-team" id="champion">
+                    <div class="trophy-icon">🏆</div>
+                    <div class="champion-logo">?</div>
+                    <div class="champion-name">미정</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 닉네임 입력 버튼 -->
+    <div class="nickname-buttons">
+        <button class="nickname-button" onclick="setNickname(this, 1)">Enter Player 1</button>
+        <button class="nickname-button" onclick="setNickname(this, 2)">Enter Player 2</button>
+        <button class="nickname-button" onclick="setNickname(this, 3)">Enter Player 3</button>
+        <button class="nickname-button" onclick="setNickname(this, 4)">Enter Player 4</button>
+    </div>
+
+    <!-- 게임 시작 버튼 -->
+    <div>
+        <button class="nickname-button" id="startSemifinal1">게임 시작 (준결승 1)</button>
+        <button class="nickname-button" id="startSemifinal2" style="display: none;">게임 시작 (준결승 2)</button>
+        <button class="nickname-button" id="startFinal" style="display: none;">결승전 시작</button>
+    </div>
+
+    <script>
+        // 토너먼트 상태 관리
+        const tournamentState = {
+            nicknames: {},
+            semifinal1Winner: null,
+            semifinal1WinnerLog: null,
+            semifinal2Winner: null,
+            semifinal2WinnerLog: null,
+            champion: null,
+            currentStage: 'semifinal1'
+        };
+
+        // 페이지 로드 시 상태 복원
+        window.addEventListener('load', function() {
+            const savedState = localStorage.getItem('tournamentState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                Object.assign(tournamentState, state);
+                
+                // 닉네임 버튼 상태 복원
+                Object.entries(tournamentState.nicknames).forEach(([player, nickname]) => {
+                    const button = document.querySelector(`button[onclick="setNickname(this, ${player})"]`);
+                    if (button) {
+                        button.textContent = nickname;
+                        updateBracket(parseInt(player), nickname);
+                    }
+                });
+
+                // 게임 진행 상태 복원
+                if (tournamentState.semifinal1Winner) {
+                    handleSemifinal1Result(tournamentState.semifinal1Winner, true);
+                }
+                if (tournamentState.semifinal2Winner) {
+                    handleSemifinal2Result(tournamentState.semifinal2Winner, true);
+                }
+                if (tournamentState.champion) {
+                    handleFinalResult(tournamentState.champion, true);
+                }
+
+                // 버튼 상태 복원
+                updateGameButtons();
+            }
+        });
+
+        // 상태 저장 함수
+        function saveState() {
+            localStorage.setItem('tournamentState', JSON.stringify(tournamentState));
+        }
+
+        function clearTournamentStorage() {
+            // 토너먼트 관련 키들을 명시적으로 삭제
+            localStorage.removeItem('tournamentState');
+            localStorage.removeItem('currentMatch');
+            localStorage.removeItem('player1');
+            localStorage.removeItem('player2');
+            localStorage.removeItem('matchResult');
+            localStorage.removeItem('winner');
+        }
+
+        // 닉네임 설정
+        function setNickname(button, player) {
+            let nickname = prompt("Enter your nickname:");
+            if (nickname) {
+                button.textContent = nickname;
+                tournamentState.nicknames[player] = nickname;
+                updateBracket(player, nickname);
+                saveState();
+            }
+        }
+
+        // 버튼 상태 업데이트
+        function updateGameButtons() {
+            const semifinal1Btn = document.getElementById('startSemifinal1');
+            const semifinal2Btn = document.getElementById('startSemifinal2');
+            const finalBtn = document.getElementById('startFinal');
+
+            if (tournamentState.semifinal1Winner) {
+                semifinal1Btn.style.display = 'none';
+                semifinal2Btn.style.display = 'inline';
+            }
+            if (tournamentState.semifinal2Winner) {
+                semifinal2Btn.style.display = 'none';
+                finalBtn.style.display = 'inline';
+            }
+            if (tournamentState.champion) {
+                finalBtn.style.display = 'none';
+            }
+        }
+
+        // 대진표 업데이트
+        function updateBracket(player, nickname) {
+            const teamElement = document.querySelector(`#team${player} .team-name`);
+            const teamLogo = document.querySelector(`#team${player} .team-logo`);
+            if (teamElement && teamLogo) {
+                teamElement.textContent = nickname;
+                teamLogo.textContent = player;  // 플레이어 번호 추가
+            }
+        }
+
+        // 준결승1 결과 처리
+        function handleSemifinal1Result(winner, isStateRestore = false) {
+            tournamentState.semifinal1Winner = winner;
+            
+            // 승자/패자 표시
+            const team1 = document.querySelector('#team1');
+            const team2 = document.querySelector('#team2');
+            if (winner === tournamentState.nicknames[1]) {
+                team2.classList.add('eliminated');
+                team1.classList.add('winner');
+            } else {
+                team1.classList.add('eliminated');
+                team2.classList.add('winner');
+            }
+            
+            // 결승 진출자 업데이트
+            document.querySelector('#finalist1 .team-name').textContent = winner;
+            finalist1.querySelector('.team-logo').textContent = winner === tournamentState.nicknames[1] ? 1 : 2;
+            
+            if (!isStateRestore) {
+                saveState();
+                updateGameButtons();
+            }
+        }
+
+        // 준결승2 결과 처리
+        function handleSemifinal2Result(winner, isStateRestore = false) {
+            tournamentState.semifinal2Winner = winner;
+            
+            // 승자/패자 표시
+            const team3 = document.querySelector('#team3');
+            const team4 = document.querySelector('#team4');
+            if (winner === tournamentState.nicknames[3]) {
+                team4.classList.add('eliminated');
+                team3.classList.add('winner');
+            } else {
+                team3.classList.add('eliminated');
+                team4.classList.add('winner');
+            }
+            
+            // 결승 진출자 업데이트
+            document.querySelector('#finalist2 .team-name').textContent = winner;
+            finalist2.querySelector('.team-logo').textContent = winner === tournamentState.nicknames[3] ? 3 : 4;
+            
+            if (!isStateRestore) {
+                saveState();
+                updateGameButtons();
+            }
+        }
+
+        // 결승 결과 처리
+        function handleFinalResult(winner, isStateRestore = false) {
+            tournamentState.champion = winner;
+            
+            // 우승자 표시
+            const championLogo = document.querySelector('.champion-logo');
+            const championName = document.querySelector('.champion-name');
+            championName.textContent = winner;
+            
+            if (winner === tournamentState.semifinal1Winner) {
+                championLogo.textContent = winner === tournamentState.nicknames[1] ? 1 : 2;
+            } else {
+                championLogo.textContent = winner === tournamentState.nicknames[3] ? 3 : 4;
+            }
+            
+            // 결승 승자/패자 표시
+            const finalist1 = document.querySelector('#finalist1');
+            const finalist2 = document.querySelector('#finalist2');
+            if (winner === tournamentState.semifinal1Winner) {
+                finalist2.classList.add('eliminated');
+                finalist1.classList.add('winner');
+            } else {
+                finalist1.classList.add('eliminated');
+                finalist2.classList.add('winner');
+            }
+            
+            clearTournamentStorage();
+            updateGameButtons();
+        }
+
+        // 게임 시작 이벤트 리스너들
+        document.getElementById('startSemifinal1').addEventListener('click', function() {
+            if (!tournamentState.nicknames[1] || !tournamentState.nicknames[2]) {
+                alert("플레이어 1과 2의 닉네임을 모두 입력해주세요!");
+                return;
+            }
+            localStorage.setItem('currentMatch', 'semifinal1');
+            localStorage.setItem('player1', tournamentState.nicknames[1]);
+            localStorage.setItem('player2', tournamentState.nicknames[2]);
+            window.location.href = '/game/local/torunament/game';
+        });
+
+        document.getElementById('startSemifinal2').addEventListener('click', function() {
+            if (!tournamentState.nicknames[3] || !tournamentState.nicknames[4]) {
+                alert("플레이어 3과 4의 닉네임을 모두 입력해주세요!");
+                return;
+            }
+            localStorage.setItem('currentMatch', 'semifinal2');
+            localStorage.setItem('player1', tournamentState.nicknames[3]);
+            localStorage.setItem('player2', tournamentState.nicknames[4]);
+            window.location.href = '/game/local/torunament/game';
+        });
+
+        document.getElementById('startFinal').addEventListener('click', function() {
+            localStorage.setItem('currentMatch', 'final');
+            localStorage.setItem('player1', tournamentState.semifinal1Winner);
+            localStorage.setItem('player2', tournamentState.semifinal2Winner);
+            window.location.href = '/game/local/torunament/game';
+        });
+
+        // 게임 결과 처리
+        window.addEventListener('load', function() {
+            const matchResult = localStorage.getItem('matchResult');
+            if (matchResult === 'completed') {
+                const winner = localStorage.getItem('winner');
+                const matchType = localStorage.getItem('currentMatch');
+                
+                if (matchType === 'semifinal1') {
+                    handleSemifinal1Result(winner);
+                } else if (matchType === 'semifinal2') {
+                    handleSemifinal2Result(winner);
+                } else if (matchType === 'final') {
+                    handleFinalResult(winner);
+                }
+                
+                localStorage.removeItem('matchResult');
+                localStorage.removeItem('winner');
+                localStorage.removeItem('currentMatch');
+            }
+        });
+    </script>
+</body>
+</html>
+```
+

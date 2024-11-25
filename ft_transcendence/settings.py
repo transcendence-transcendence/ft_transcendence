@@ -12,12 +12,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from dotenv import load_dotenv
+load_dotenv(override=True)  # override=True를 추가하여 강제 재로드
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 APP_SECRET_KEY = config('APP_SECRET_KEY')
 APP_EMAIL = config('APP_EMAIL')
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -58,7 +59,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT 인증
     ),
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.TemplateHTMLRenderer', # 디버깅 용
+        # 'rest_framework.renderers.TemplateHTMLRenderer', # 디버깅 용
         'rest_framework.renderers.JSONRenderer',
     ),
 }
@@ -82,6 +83,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
 ]
 
 ROOT_URLCONF = 'ft_transcendence.urls'
@@ -118,7 +120,7 @@ DATABASES = {
         'NAME': 'ft_transcendence',      # 생성한 데이터베이스 이름
         'USER': 'admin',                # 생성한 PostgreSQL 사용자 이름
         'PASSWORD': 'admin',        # PostgreSQL 사용자 비밀번호
-        'HOST': 'localhost',             # 로컬에서 실행 중이므로 localhost 사용
+        'HOST': '127.0.0.1',             # 로컬에서 실행 중이므로 localhost 사용
         'PORT': '5432',                  # PostgreSQL 기본 포트
     }
 }
@@ -156,6 +158,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,  # 최소 길이 설정
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -164,6 +169,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 
 
 # Internationalization
@@ -187,3 +193,42 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8080']
+
+INSTALLED_APPS += [
+    'corsheaders',  # corsheaders 추가
+]
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    *MIDDLEWARE,
+]
+
+CORS_ALLOW_HEADERS = [
+    'Authorization',
+    'X-CSRFToken',
+    'Content-Type',
+]
+
+
+# 허용할 CORS 도메인 설정
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8080",  # SPA가 실행되는 도메인
+    "http://localhost:8080",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8080',
+    'http://localhost:8080',
+]
+
+# 추가 옵션 (필요에 따라 설정)
+CORS_ALLOW_CREDENTIALS = True  # 쿠키를 포함한 인증 정보를 전달하도록 허용
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_NAME = 'sessionid'
+CORS_ALLOW_ALL_ORIGINS = True
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
