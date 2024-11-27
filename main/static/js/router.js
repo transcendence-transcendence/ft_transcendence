@@ -2,7 +2,9 @@ const routes = {
     '/': 'Home',
     '/login': 'Login',
     '/signup': 'Signup',
-    '/two-factor': 'TwoFactorAuth', // 2FA 추가
+    '/two-factor': 'TwoFactorAuth',
+    '/tournament': 'Tournament',
+    '/tournament/game': 'TournamentGame'
 };
 
 export async function router() {

@@ -6,7 +6,7 @@ output_file = "test.txt"
 # 검색할 디렉토리와 파일 확장자 목록
 directories = [
     "game/templates",
-    # "main/static/js/components",
+    "main/static/js/components",
     # "main/templates/",
     # "main/views",
 ]
