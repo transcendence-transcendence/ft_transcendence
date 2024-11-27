@@ -2,7 +2,7 @@ export default async function TournamentGame() {
     const template = `
         <div class="game-container">
             <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
-            <canvas id="gameCanvas" width="800" height="400"></canvas>
+            <div id="gameCanvas"></div>
         </div>
     `;
 
@@ -14,44 +14,126 @@ export default async function TournamentGame() {
 }
 
 function initializeGame() {
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    // Three.js 초기 설정
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x1a1a1a);
+    document.getElementById('gameCanvas').appendChild(renderer.domElement);
+
+    localStorage.removeItem('matchResult');
+    localStorage.removeItem('winner');
+
+    // 게임 상태 변수
     const scoreBoard = document.getElementById('scoreBoard');
+    
+    let player1Score = 0;
+    let player2Score = 0;
 
-    const ball = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
-        radius: 10,
-        speed: 5,
-        dx: 5,
-        dy: 5
-    };
+    // 게임 필드 크기 상수
+    const TABLE_WIDTH = 20;
+    const TABLE_DEPTH = 10;
+    const PADDLE_LIMIT = TABLE_DEPTH / 2 - 1;
 
-    const paddle1 = {
-        x: 0,
-        y: canvas.height / 2 - 50,
-        width: 10,
-        height: 100,
-        dy: 7,
-        score: 0
-    };
+    // Canvas 크기 (서버와 동일하게 설정)
+    const CANVAS_WIDTH = 800;
+    const CANVAS_HEIGHT = 400;
 
-    const paddle2 = {
-        x: canvas.width - 10,
-        y: canvas.height / 2 - 50,
-        width: 10,
-        height: 100,
-        dy: 7,
-        score: 0
-    };
+    // 서버의 패들 및 공 크기
+    const PADDLE_WIDTH_SERVER = 10;
+    const PADDLE_HEIGHT_SERVER = 100;
+    const BALL_RADIUS_SERVER = 10;
 
-    const powerUp = {
-        x: 0,
-        y: 0,
-        radius: 15,
-        active: false,
-        type: ''
-    };
+    // 좌표 및 크기 매핑 함수
+    function mapX(x) {
+        return ((x - CANVAS_WIDTH / 2) / (CANVAS_WIDTH / 2)) * (TABLE_WIDTH / 2);
+    }
+
+    function mapZ(y) {
+        return ((y - CANVAS_HEIGHT / 2) / (CANVAS_HEIGHT / 2)) * (TABLE_DEPTH / 2);
+    }
+
+    function mapWidth(width) {
+        return (width / CANVAS_WIDTH) * TABLE_WIDTH;
+    }
+
+    function mapDepth(height) {
+        return (height / CANVAS_HEIGHT) * TABLE_DEPTH;
+    }
+
+    // 3D 오브젝트 생성
+    // 탁구대
+    const tableGeometry = new THREE.BoxGeometry(TABLE_WIDTH, 0.5, TABLE_DEPTH);
+    const tableMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x004400,
+        shininess: 60
+    });
+    const table = new THREE.Mesh(tableGeometry, tableMaterial);
+    scene.add(table);
+
+    // 테이블 경계선
+    const borderMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const borderGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2),
+        new THREE.Vector3(TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2),
+        new THREE.Vector3(TABLE_WIDTH/2, 0.26, TABLE_DEPTH/2),
+        new THREE.Vector3(-TABLE_WIDTH/2, 0.26, TABLE_DEPTH/2),
+        new THREE.Vector3(-TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2)
+    ]);
+    const borderLine = new THREE.Line(borderGeometry, borderMaterial);
+    scene.add(borderLine);
+
+    // 패들
+    const paddleWidth = mapWidth(PADDLE_WIDTH_SERVER);
+    const paddleHeight = 1.5;
+    const paddleDepth = mapDepth(PADDLE_HEIGHT_SERVER);
+    const paddleGeometry = new THREE.BoxGeometry(paddleWidth, paddleHeight, paddleDepth);
+    
+    const paddle1 = new THREE.Mesh(paddleGeometry, new THREE.MeshPhongMaterial({ 
+        color: 0xff0000,
+        shininess: 100
+    }));
+    const paddle2 = new THREE.Mesh(paddleGeometry.clone(), new THREE.MeshPhongMaterial({ 
+        color: 0x0000ff,
+        shininess: 100
+    }));
+
+    const paddle1X = mapX(PADDLE_WIDTH_SERVER / 2);
+    const paddle2X = mapX(CANVAS_WIDTH - PADDLE_WIDTH_SERVER / 2);
+    paddle1.position.set(paddle1X, 1, 0);
+    paddle2.position.set(paddle2X, 1, 0);
+    scene.add(paddle1);
+    scene.add(paddle2);
+
+    // 공
+    const ballRadius = (BALL_RADIUS_SERVER / CANVAS_WIDTH) * TABLE_WIDTH;
+    const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
+    const ball = new THREE.Mesh(ballGeometry, new THREE.MeshPhongMaterial({ 
+        color: 0xffffff,
+        shininess: 100,
+        emissive: 0x444444
+    }));
+    ball.position.set(0, 1, 0);
+    scene.add(ball);
+
+    // 조명
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const spotLight = new THREE.SpotLight(0xffffff, 0.8);
+    spotLight.position.set(0, 15, 0);
+    spotLight.castShadow = true;
+    scene.add(spotLight);
+
+    // 카메라 위치 설정
+    camera.position.set(0, 12, 15);
+    camera.lookAt(0, 0, 0);
+
+    // 게임 로직 변수
+    let ballSpeed = 0.2;
+    let ballDX = ballSpeed;
+    let ballDY = ballSpeed;
+    const paddleSpeed = 0.3;
 
     const keys = {
         w: false,
@@ -72,196 +154,114 @@ function initializeGame() {
         }
     });
 
-    function resetBall(player) {
-        ball.x = canvas.width / 2;
-        ball.y = canvas.height / 2;
-        ball.speed = 5;
-        ball.dx = ball.speed * (player === 1 ? 1 : -1);
-        ball.dy = ball.speed * (Math.random() - 0.5);
-    }
-
     function movePaddles() {
-        if (keys.w && paddle1.y > 0) {
-            paddle1.y -= paddle1.dy;
+        // paddleDepth/2를 고려하여 이동 제한
+        if (keys.w && paddle1.position.z - paddleDepth/2 > -TABLE_DEPTH/2) {
+            paddle1.position.z -= paddleSpeed;
         }
-        if (keys.s && paddle1.y < canvas.height - paddle1.height) {
-            paddle1.y += paddle1.dy;
+        if (keys.s && paddle1.position.z + paddleDepth/2 < TABLE_DEPTH/2) {
+            paddle1.position.z += paddleSpeed;
         }
-        if (keys.ArrowUp && paddle2.y > 0) {
-            paddle2.y -= paddle2.dy;
+        if (keys.ArrowUp && paddle2.position.z - paddleDepth/2 > -TABLE_DEPTH/2) {
+            paddle2.position.z -= paddleSpeed;
         }
-        if (keys.ArrowDown && paddle2.y < canvas.height - paddle2.height) {
-            paddle2.y += paddle2.dy;
-        }
-    }
-
-    function detectCollision() {
-        // 상하 벽과 충돌
-        if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
-            ball.dy = -ball.dy;
-        }
-
-        // 패들과 돌
-        if (ball.dx < 0) {
-            if (ball.x - ball.radius < paddle1.x + paddle1.width &&
-                ball.y > paddle1.y && ball.y < paddle1.y + paddle1.height) {
-                ball.dx = -ball.dx;
-                createParticles(ball.x, ball.y, 10);
-            }
-        } else {
-            if (ball.x + ball.radius > paddle2.x &&
-                ball.y > paddle2.y && ball.y < paddle2.y + paddle2.height) {
-                ball.dx = -ball.dx;
-                createParticles(ball.x, ball.y, 10);
-            }
-        }
-
-        // 점수 계산
-        if (ball.x - ball.radius < 0) {
-            paddle2.score++;
-            updateScore();
-            resetBall(2);
-        } else if (ball.x + ball.radius > canvas.width) {
-            paddle1.score++;
-            updateScore();
-            resetBall(1);
-        }
-
-        // 파워업 충돌 감지
-        if (powerUp.active) {
-            const dx = ball.x - powerUp.x;
-            const dy = ball.y - powerUp.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < ball.radius + powerUp.radius) {
-                applyPowerUp();
-                createParticles(powerUp.x, powerUp.y, 20);
-            }
+        if (keys.ArrowDown && paddle2.position.z + paddleDepth/2 < TABLE_DEPTH/2) {
+            paddle2.position.z += paddleSpeed;
         }
     }
 
-    function createParticles(x, y, amount) {
-        for (let i = 0; i < amount; i++) {
-            const particle = document.createElement('div');
-            particle.classList.add('particle');
-            particle.style.left = `${x}px`;
-            particle.style.top = `${y}px`;
-            particle.style.width = `${Math.random() * 4 + 2}px`;
-            particle.style.height = particle.style.width;
-            
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 3 + 1;
-            const dx = Math.cos(angle) * speed;
-            const dy = Math.sin(angle) * speed;
-            
-            document.body.appendChild(particle);
-            
-            let opacity = 1;
-            const animate = () => {
-                if (opacity <= 0) {
-                    particle.remove();
-                    return;
-                }
-                
-                opacity -= 0.02;
-                particle.style.opacity = opacity;
-                particle.style.left = `${parseFloat(particle.style.left) + dx}px`;
-                particle.style.top = `${parseFloat(particle.style.top) + dy}px`;
-                
-                requestAnimationFrame(animate);
-            };
-            
-            animate();
-        }
+    function resetBall() {
+        ball.position.set(0, 1, 0);
+        ballDX = Math.random() < 0.5 ? ballSpeed : -ballSpeed;
+        ballDY = (Math.random() - 0.5) * ballSpeed;
     }
 
-    function createPowerUp() {
-        if (!powerUp.active) {
-            powerUp.x = Math.random() * (canvas.width - 100) + 50;
-            powerUp.y = Math.random() * (canvas.height - 100) + 50;
-            powerUp.active = true;
-            powerUp.type = Math.random() < 0.5 ? 'speed' : 'size';
-        }
-    }
-
-    function applyPowerUp() {
-        if (powerUp.type === 'speed') {
-            ball.speed *= 0.8;
-            const angle = Math.atan2(ball.dy, ball.dx);
-            ball.dx = ball.speed * Math.cos(angle);
-            ball.dy = ball.speed * Math.sin(angle);
-        } else if (powerUp.type === 'size') {
-            paddle1.height = Math.min(150, paddle1.height + 20);
-            paddle2.height = Math.min(150, paddle2.height + 20);
-        }
-        powerUp.active = false;
+    function endGame(winner) {
+        localStorage.setItem('matchResult', 'completed');
+        localStorage.setItem('winner', winner);
+        history.pushState({}, '', '/tournament');
+        window.dispatchEvent(new Event('popstate'));
     }
 
     function checkGameEnd() {
-        if (paddle1.score >= 5) {
+        if (player1Score >= 5) {
             endGame(localStorage.getItem('player1'));
             return true;
-        } else if (paddle2.score >= 5) {
+        } else if (player2Score >= 5) {
             endGame(localStorage.getItem('player2'));
             return true;
         }
         return false;
     }
 
-    function endGame(winner) {
-        localStorage.setItem('matchResult', 'completed');
-        localStorage.setItem('winner', winner);
-        window.history.pushState({}, '', '/tournament');
-        window.dispatchEvent(new Event('popstate'));
-    }
-
     function updateScore() {
         const player1Name = localStorage.getItem('player1');
         const player2Name = localStorage.getItem('player2');
-        scoreBoard.textContent = `${player1Name}: ${paddle1.score} | ${player2Name}: ${paddle2.score}`;
+        scoreBoard.textContent = `${player1Name}: ${player1Score} | ${player2Name}: ${player2Score}`;
         checkGameEnd();
     }
 
-    function gameLoop() {
-        if (checkGameEnd()) {
-            return; // 게임이 끝나면 gameLoop 중단
+    function detectCollision() {
+        // 상하 벽과 충돌
+        if (ball.position.z + ballRadius > TABLE_DEPTH/2 || ball.position.z - ballRadius < -TABLE_DEPTH/2) {
+            ballDY = -ballDY;
         }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        movePaddles();
-        
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff';
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
-        ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
-
-        if (powerUp.active) {
-            ctx.beginPath();
-            ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
-            ctx.fillStyle = powerUp.type === 'speed' ? '#00ffff' : '#ff00ff';
-            ctx.fill();
-            ctx.closePath();
+        // 패들과 충돌
+        if (ballDX < 0) {
+            if (ball.position.x - ballRadius < paddle1.position.x + paddleWidth/2 &&
+                ball.position.z > paddle1.position.z - paddleDepth/2 &&
+                ball.position.z < paddle1.position.z + paddleDepth/2) {
+                ballDX = -ballDX;
+            }
+        } else {
+            if (ball.position.x + ballRadius > paddle2.position.x - paddleWidth/2 &&
+                ball.position.z > paddle2.position.z - paddleDepth/2 &&
+                ball.position.z < paddle2.position.z + paddleDepth/2) {
+                ballDX = -ballDX;
+            }
         }
 
-        ball.x += ball.dx;
-        ball.y += ball.dy;
-
-        detectCollision();
-
-        if (Math.random() < 0.002) {
-            createPowerUp();
+        // 득점 체크
+        if (ball.position.x < -TABLE_WIDTH/2) {
+            player2Score++;
+            updateScore();
+            resetBall();
+        } else if (ball.position.x > TABLE_WIDTH/2) {
+            player1Score++;
+            updateScore();
+            resetBall();
         }
-
-        requestAnimationFrame(gameLoop);
     }
 
+    // 창 크기 조정 이벤트
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 게임 루프
+    function animate() {
+        if (checkGameEnd()) {
+            return; // 게임이 끝나면 animate 중단
+        }
+
+        requestAnimationFrame(animate);
+
+        movePaddles();
+        
+        ball.position.x += ballDX;
+        ball.position.z += ballDY;
+        ball.rotation.x += 0.05;
+        ball.rotation.z += 0.05;
+
+        detectCollision();
+        
+        renderer.render(scene, camera);
+    }
+
+    resetBall();
     updateScore();
-    resetBall(Math.random() < 0.5 ? 1 : 2);
-    gameLoop();
-} 
+    animate();
+}
