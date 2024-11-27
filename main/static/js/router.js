@@ -4,7 +4,8 @@ const routes = {
     '/signup': 'Signup',
     '/two-factor': 'TwoFactorAuth',
     '/tournament': 'Tournament',
-    '/tournament/game': 'TournamentGame'
+    '/tournament/game': 'TournamentGame',
+    '/game/room': 'OnlineGame',
 };
 
 export async function router() {

@@ -1,5 +1,3 @@
-import { apiGet } from '../api.js';
-
 export default async function Tournament() {
     const template = `
         <div class="tournament-container">
