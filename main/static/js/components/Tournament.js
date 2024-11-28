@@ -112,6 +112,22 @@ export default async function Tournament() {
 
         tournament.restoreState();
         tournament.initializeEventListeners();
+
+        const clearTournamentButton = document.getElementById('clear-tournament');
+        if (clearTournamentButton) {
+            clearTournamentButton.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear all tournament results?')) {
+                    localStorage.removeItem('tournamentState');
+                    localStorage.removeItem('currentMatch');
+                    localStorage.removeItem('player1');
+                    localStorage.removeItem('player2');
+                    localStorage.removeItem('matchResult');
+                    localStorage.removeItem('winner');
+                    alert('Tournament results have been cleared.');
+                    window.location.reload();
+                }
+            });
+        }
     }, 0);
 
     return template;
@@ -185,6 +201,26 @@ function initializeTournament() {
             if (finalist1) {
                 finalist1.querySelector('.team-name').textContent = winner;
                 finalist1.querySelector('.team-logo').textContent = winner === tournamentState.nicknames[1] ? '1' : '2';
+                // Clear Tournament 버튼을 동적으로 추가
+                const container = document.querySelector('.tournament-container');
+                if (container && !document.querySelector('.clear-tournament-container')) {
+                    const clearButtonContainer = document.createElement('div');
+                    clearButtonContainer.className = 'clear-tournament-container';
+                    clearButtonContainer.innerHTML = `
+                        <button class="nickname-button" id="clear-tournament" class="btn btn-warning">Clear Tournament Results</button>
+                    `;
+                    container.appendChild(clearButtonContainer);
+                    
+                    // Clear 버튼에 이벤트 리스너 추가
+                    const clearButton = clearButtonContainer.querySelector('#clear-tournament');
+                    clearButton.addEventListener('click', () => {
+                        if (confirm('Are you sure you want to clear all tournament results?')) {
+                            this.clearTournamentStorage();
+                            // 해시 변경으로 라우터 트리거
+                            window.location.hash = window.location.hash;
+                        }
+                    });
+                }
             }
             
             // 버튼 상태 업데이트
@@ -287,8 +323,7 @@ function initializeTournament() {
                 localStorage.setItem('currentMatch', 'semifinal1');
                 localStorage.setItem('player1', tournamentState.nicknames[1]);
                 localStorage.setItem('player2', tournamentState.nicknames[2]);
-                window.history.pushState({}, '', '/tournament/game');
-                window.dispatchEvent(new Event('popstate'));
+                window.location.hash = '#/tournament/game';
             });
 
             document.getElementById('startSemifinal2').addEventListener('click', () => {
@@ -299,16 +334,14 @@ function initializeTournament() {
                 localStorage.setItem('currentMatch', 'semifinal2');
                 localStorage.setItem('player1', tournamentState.nicknames[3]);
                 localStorage.setItem('player2', tournamentState.nicknames[4]);
-                window.history.pushState({}, '', '/tournament/game');
-                window.dispatchEvent(new Event('popstate'));
+                window.location.hash = '#/tournament/game';
             });
 
             document.getElementById('startFinal').addEventListener('click', () => {
                 localStorage.setItem('currentMatch', 'final');
                 localStorage.setItem('player1', tournamentState.semifinal1Winner);
                 localStorage.setItem('player2', tournamentState.semifinal2Winner);
-                window.history.pushState({}, '', '/tournament/game');
-                window.dispatchEvent(new Event('popstate'));
+                window.location.hash = '#/tournament/game';
             });
 
             const matchResult = localStorage.getItem('matchResult');

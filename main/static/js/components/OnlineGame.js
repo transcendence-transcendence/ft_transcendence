@@ -29,13 +29,15 @@ export default async function OnlineGame() {
     const roomName = urlParams.get('room') || 'default';
 
     const template = `
-        <div class="game-container">
+    <div class="game-container">
+        <div class="game-overlay">
             <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
             <div id="waitMessage">게임을 시작하려면 준비 버튼을 눌러주세요.</div>
             <button id="readyButton" style="display: none;">I'm Ready!</button>
-            <div id="gameCanvas"></div>
         </div>
-    `;
+        <div id="gameCanvas"></div>
+    </div>
+`;
 
     setTimeout(() => {
         initializeGame(roomName, currentUser);
@@ -203,8 +205,7 @@ function initializeGame(roomName, currentUser) {
 
         if (data.type === 'game_over') {
             alert(data.winner + '가 5점에 도달하여 승리하였습니다!');
-            history.pushState(null, '', '/');
-            window.dispatchEvent(new Event('popstate'));
+            window.location.hash = '#/';
         }
     };
 

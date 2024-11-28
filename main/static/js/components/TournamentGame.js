@@ -160,12 +160,16 @@ function initializeGame() {
 
     document.addEventListener('keydown', (e) => {
         if (e.key in keys) {
+            console.log(e.key);
+            e.preventDefault();
             keys[e.key] = true;
         }
     });
 
     document.addEventListener('keyup', (e) => {
         if (e.key in keys) {
+            console.log(e.key);
+            e.preventDefault();
             keys[e.key] = false;
         }
     });
@@ -195,8 +199,7 @@ function initializeGame() {
     function endGame(winner) {
         localStorage.setItem('matchResult', 'completed');
         localStorage.setItem('winner', winner);
-        history.pushState({}, '', '/tournament');
-        window.dispatchEvent(new Event('popstate'));
+        window.location.hash = '#/tournament';
     }
 
     function checkGameEnd() {

@@ -11,13 +11,13 @@ def spa_view(request):
     return render(request, 'base_spa.html')
 
 urlpatterns = [
-    path('', home, name='home'),  # 메인 페이지 URL을 ''로 설정
-    path('accounts/signup/', signup, name='signup'),
-    path('accounts/login/', LoginView.as_view(), name='login'),
-    path('accounts/two-factor/', TwoFactorAuthView.as_view(), name='two_factor'),
-    path('accounts/logout/', LogoutView.as_view(next_page='/'), name='logout'),
-    path('accounts/oauth/login/', login_view, name='oauth_login'),
-    path('accounts/oauth/callback/', callback_view, name='oauth_callback'),
+    # path('', home, name='home'),  # 메인 페이지 URL을 ''로 설정
+    # path('accounts/signup/', signup, name='signup'),
+    # path('accounts/login/', LoginView.as_view(), name='login'),
+    # path('accounts/two-factor/', TwoFactorAuthView.as_view(), name='two_factor'),
+    # path('accounts/logout/', LogoutView.as_view(next_page='/'), name='logout'),
+    # path('accounts/oauth/login/', login_view, name='oauth_login'),
+    # path('accounts/oauth/callback/', callback_view, name='oauth_callback'),
 
     # API 라우팅
     path('api/login', login_api, name='login_api'),
@@ -29,5 +29,5 @@ urlpatterns = [
     path('api/logout', logout_view, name='logout_api'),
 
     # SPA 라우팅
-    path('spa/', spa_view, name='spa_home'),
+    path('', spa_view, name='spa_home'),
 ]
