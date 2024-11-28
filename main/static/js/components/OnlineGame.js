@@ -37,6 +37,7 @@ export default async function OnlineGame() {
         </div>
         <div id="gameCanvas"></div>
     </div>
+    <link rel="stylesheet" href="/static/css/game.css">
 `;
 
     setTimeout(() => {

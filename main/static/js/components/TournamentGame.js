@@ -158,6 +158,17 @@ function initializeGame() {
         ArrowDown: false
     };
 
+    let isGameRunning = true;
+
+    // 게임 종료 이벤트 리스너 추가
+    window.addEventListener('hashchange', () => {
+        isGameRunning = false;
+    });
+
+    window.addEventListener('beforeunload', () => {
+        isGameRunning = false;
+    });
+
     document.addEventListener('keydown', (e) => {
         if (e.key in keys) {
             console.log(e.key);
@@ -197,9 +208,12 @@ function initializeGame() {
     }
 
     function endGame(winner) {
-        localStorage.setItem('matchResult', 'completed');
-        localStorage.setItem('winner', winner);
-        window.location.hash = '#/tournament';
+        if (isGameRunning) {
+            isGameRunning = false;
+            localStorage.setItem('matchResult', 'completed');
+            localStorage.setItem('winner', winner);
+            window.location.hash = '#/tournament';
+        }
     }
 
     function checkGameEnd() {
@@ -262,7 +276,7 @@ function initializeGame() {
 
     // 게임 루프
     function animate() {
-        if (checkGameEnd()) {
+        if (!isGameRunning || checkGameEnd()) {
             return; // 게임이 끝나면 animate 중단
         }
 
