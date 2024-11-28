@@ -1,85 +1,83 @@
-import { apiGet, apiPost } from '../api.js';
+import { apiGet } from '../api.js';
 
 export default async function Home() {
-    // 서버로부터 사용자 인증 상태를 가져오기
     let user = null;
     try {
-        user = await apiGet('/auth/status'); // 서버에서 사용자 상태를 반환하는 API
+        user = await apiGet('/auth/status');
     } catch (error) {
         console.error('Failed to fetch user status:', error);
     }
 
-    // 인증 상태에 따른 버튼 렌더링
     const loggedIn = user?.is_authenticated;
     const isOtpVerified = user?.is_otp_verified;
 
-    // 홈 페이지 템플릿
     const template = `
-        <div class="home">
-            <h1>Welcome to the Game Hub</h1>
-            <p>Experience a simple SPA demo.</p>
-
-            ${loggedIn ? `
-                <button id="logout-button" class="btn btn-secondary">Logout</button>
-                ${isOtpVerified ? `
-                    <a href="#/tournament" data-link class="btn btn-primary">Local Go to Game</a>
-                    <a href="#/game/room" data-link class="btn btn-primary">Online Go to Game</a>
-                ` : `
-                    <button id="two-factor-button" class="btn btn-primary">Enable Email 2FA</button>
-                `}
-            ` : `
-                <a href="/signup" data-link class="btn btn-primary">Sign Up</a>
-                <a href="/login" data-link class="btn btn-primary">Login</a>
-                <button id="oauth-button" class="oauth-button">Login with 42 OAuth</button>
-            `}
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <h1 class="display-4 mb-4 crt-effect">PONG GAME</h1>
+                    <div class="card bg-dark text-light border-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title crt-effect">Welcome to the Game Hub</h5>
+                            <p class="card-text">Experience classic Pong with a retro twist.</p>
+                        </div>
+                    </div>
+                    <div class="btn-group-vertical">
+                        ${loggedIn ? `
+                            <button id="logout-button" class="btn btn-outline-danger mb-2">Logout</button>
+                            ${isOtpVerified ? `
+                                <a href="#/tournament" data-link class="btn btn-primary mb-2">Local Game</a>
+                                <a href="#/game/room" data-link class="btn btn-info mb-2">Online Game</a>
+                            ` : `
+                                <button id="two-factor-button" class="btn btn-warning mb-2">Enable Email 2FA</button>
+                            `}
+                        ` : `
+                            <a href="/signup" data-link class="btn btn-success mb-2">Sign Up</a>
+                            <a href="/login" data-link class="btn btn-primary mb-2">Login</a>
+                            <button id="oauth-button" class="btn btn-secondary mb-2">Login with 42 OAuth</button>
+                        `}
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 
-    // DOM 업데이트 후 이벤트 등록을 위해 반환된 템플릿을 비동기로 실행
+    // 이벤트 리스너 설정
     setTimeout(() => {
-        const oauthButton = document.getElementById('oauth-button');
-        const twoFactorButton = document.getElementById('two-factor-button');
         const logoutButton = document.getElementById('logout-button');
+        const twoFactorButton = document.getElementById('two-factor-button');
+        const oauthButton = document.getElementById('oauth-button');
 
-        // OAuth 버튼 이벤트 등록
-        if (oauthButton) {
-            oauthButton.addEventListener('click', () => {
-                import('./OAuthCallback.js')
-                    .then((module) => {
-                        module.startOAuthFlow();
-                    })
-                    .catch((err) => console.error('Failed to start OAuth flow:', err));
-            });
-        }
-
-        // 2FA 버튼 이벤트 등록
-        if (twoFactorButton) {
-            twoFactorButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                history.pushState(null, '', '/two-factor'); // URL 변경
-                import('../router.js').then((module) => {
-                    module.router(); // SPA 라우터로 두 팩터 페이지 렌더링
-                });
-            });
-        }
-
-        // Logout 버튼 이벤트 등록
         if (logoutButton) {
             logoutButton.addEventListener('click', async () => {
                 try {
-                    const response = await apiPost('/logout', {}); // 로그아웃 호출
-                    if (response.message === 'Logout successful') {
-                        alert('You have been logged out.');
-                        window.location.reload(); // 홈 페이지로 리다이렉트하여 상태 초기화
-                        console.log(response);
+                    await apiGet('/auth/logout');
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Logout failed:', error);
+                }
+            });
+        }
+
+        if (twoFactorButton) {
+            twoFactorButton.addEventListener('click', async () => {
+                try {
+                    const response = await apiGet('/auth/request-otp');
+                    if (response.status === 'success') {
+                        alert('2FA verification email has been sent. Please check your email.');
                     }
                 } catch (error) {
-                    // console.error('Logout failed:', error);
-                    alert('Logout failed. Please try again.');
+                    console.error('Failed to request OTP:', error);
                 }
+            });
+        }
+
+        if (oauthButton) {
+            oauthButton.addEventListener('click', () => {
+                window.location.href = '/auth/oauth';
             });
         }
     }, 0);
 
-    return template; // 템플릿 반환
+    return template;
 }
