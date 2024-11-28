@@ -17,12 +17,28 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import logout
 from django.http import JsonResponse
+from django.http import HttpResponse
+from functools import wraps
 
 User = get_user_model()
 CLIENT_ID = config('CLIENT_ID')
 CLIENT_SECRET = config('CLIENT_SECRET')
 REDIRECT_URI = "http://127.0.0.1:8080/api/oauth/callback"
 TOKEN_URL = "https://api.intra.42.fr/oauth/token"
+
+def check_auth(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        # 세션 또는 access_token 확인
+        print(request.COOKIES.get('access_token'))
+        if not request.user.is_authenticated or not request.COOKIES.get('access_token'):
+            print("Authentication required")
+            return JsonResponse({
+                'error': 'Authentication required',
+                'detail': 'No valid session or access token found.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 @method_decorator(csrf_exempt, name='dispatch')
 @api_view(['POST'])
@@ -142,8 +158,7 @@ def callback_view_api(request):
         max_age=timedelta(minutes=30).total_seconds()
     )
     return response
-
-@csrf_exempt
+@check_auth
 @api_view(['POST'])
 def generate_otp(request):
     user = request.user
@@ -156,7 +171,7 @@ def generate_otp(request):
     send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email])
 
     return Response({'message': 'OTP sent to your email.'}, status=status.HTTP_200_OK)
-
+@check_auth
 @csrf_exempt
 @api_view(['POST'])
 def verify_otp(request):
@@ -175,8 +190,7 @@ def verify_otp(request):
     else:
         return Response({'error': 'Invalid OTP. Please try again.'}, status=status.HTTP_400_BAD_REQUEST)
 
-
-@method_decorator(csrf_exempt, name='dispatch')
+@check_auth
 @api_view(['POST'])  # Using POST to handle session cookies securely
 def user_status(request):
     """
@@ -212,7 +226,8 @@ def user_status(request):
             'error': 'An unexpected error occurred.',
             'detail': str(e),
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
+@check_auth 
 @api_view(['POST'])
 def logout_view(request):
     # Django 세션 로그아웃
@@ -225,3 +240,4 @@ def logout_view(request):
     response.delete_cookie('sessionid', path='/', domain='127.0.0.1')
     response.delete_cookie('csrftoken', path='/', domain='127.0.0.1')
     return response
+

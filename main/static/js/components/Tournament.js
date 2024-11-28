@@ -1,4 +1,20 @@
+import { apiGet } from '../api.js';
+
 export default async function Tournament() {
+    try {
+        const user = await apiGet('/auth/status');
+        if (!user?.is_authenticated || !user?.is_otp_verified) {
+            history.pushState(null, '', '/');
+            window.dispatchEvent(new Event('popstate'));
+            return '';
+        }
+    } catch (error) {
+        console.error('Authentication check failed:', error);
+        history.pushState(null, '', '/');
+        window.dispatchEvent(new Event('popstate'));
+        return '';
+    }
+
     const template = `
         <div class="tournament-container">
             <div class="tournament-bracket">

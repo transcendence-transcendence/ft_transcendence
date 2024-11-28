@@ -1,4 +1,20 @@
+import { apiGet } from '../api.js';
+
 export default async function TournamentGame() {
+    try {
+        const user = await apiGet('/auth/status');
+        if (!user?.is_authenticated || !user?.is_otp_verified) {
+            history.pushState(null, '', '/');
+            window.dispatchEvent(new Event('popstate'));
+            return '';
+        }
+    } catch (error) {
+        console.error('Authentication check failed:', error);
+        history.pushState(null, '', '/');
+        window.dispatchEvent(new Event('popstate'));
+        return '';
+    }
+
     const template = `
         <div class="game-container">
             <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
