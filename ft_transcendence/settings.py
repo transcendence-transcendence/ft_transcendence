@@ -19,15 +19,13 @@ load_dotenv(override=True)  # override=True를 추가하여 강제 재로드
 BASE_DIR = Path(__file__).resolve().parent.parent
 APP_SECRET_KEY = config('APP_SECRET_KEY')
 APP_EMAIL = config('APP_EMAIL')
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*530@7fvp4aih4i0v44p2dn4c%)z!3a0s!#j%j&qc*@nd6$hu2'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
