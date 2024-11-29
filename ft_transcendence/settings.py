@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from decouple import config
 from dotenv import load_dotenv
@@ -115,9 +115,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'ft_transcendence',      # 생성한 데이터베이스 이름
-        'USER': 'admin',                # 생성한 PostgreSQL 사용자 이름
-        'PASSWORD': 'admin',        # PostgreSQL 사용자 비밀번호
-        'HOST': '127.0.0.1',             # 로컬에서 실행 중이므로 localhost 사용
+        'USER': config('POSTGRES_USER'),                # 생성한 PostgreSQL 사용자 이름
+        'PASSWORD':  config('POSTGRES_PASSWORD'),        # PostgreSQL 사용자 비밀번호
+        'HOST': 'postgres_container',             # 로컬에서 실행 중이므로 localhost 사용
         'PORT': '5432',                  # PostgreSQL 기본 포트
     }
 }
@@ -133,7 +133,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],  # Redis 서버 주소
+            "hosts": [('redis_container', 6379)],  # Redis 서버 주소
         },
     },
 }
@@ -185,3 +185,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(os.path.expanduser('~'))
