@@ -30,8 +30,8 @@ export default async function OnlineGame() {
     const template = `
     <div class="game-container">
         <div class="game-overlay">
-            <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
-            <div id="waitMessage">게임을 시작하려면 준비 버튼을 눌러주세요.</div>
+            <div id="scoreBoard" style="display: none;">플레이어 1: 0 | 플레이어 2: 0</div>
+            <div id="waitMessage">사용자 대기중...</div>
             <button id="readyButton" style="display: none;">I'm Ready!</button>
         </div>
         <div id="gameCanvas"></div>
@@ -197,6 +197,7 @@ function initializeGame(roomName, currentUser) {
             isGameStarted = true;
             readyButton.style.display = 'none';
             waitMessageDiv.style.display = 'none';
+            scoreBoard.style.display = 'block';
         }
 
         if (data.type === 'game_state') {

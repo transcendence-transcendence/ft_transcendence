@@ -19,6 +19,8 @@ from django.contrib.auth import logout
 from django.http import JsonResponse
 from django.http import HttpResponse
 from functools import wraps
+from dotenv import load_dotenv
+load_dotenv(override=True)  # override=True를 추가하여 강제 재로드
 
 User = get_user_model()
 CLIENT_ID = config('CLIENT_ID')
@@ -155,9 +157,10 @@ def callback_view_api(request):
         httponly=True,  # Prevent JavaScript access
         secure=False,   # Set to True in production with HTTPS
         samesite='Lax', # CSRF protection
-        max_age=timedelta(minutes=30).total_seconds()
+        max_age=timedelta(minutes=120).total_seconds()
     )
     return response
+
 @check_auth
 @api_view(['POST'])
 def generate_otp(request):

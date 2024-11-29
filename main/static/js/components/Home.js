@@ -32,8 +32,8 @@ export default async function Home() {
                                 <button id="two-factor-button" class="btn btn-warning mb-2">Enable Email 2FA</button>
                             `}
                         ` : `
-                            <a href="/signup" data-link class="btn btn-success mb-2">Sign Up</a>
-                            <a href="/login" data-link class="btn btn-primary mb-2">Login</a>
+                            <a href="#/signup" data-link class="btn btn-success mb-2">Sign Up</a>
+                            <a href="#/login" data-link class="btn btn-primary mb-2">Login</a>
                             <button id="oauth-button" class="btn btn-secondary mb-2">Login with 42 OAuth</button>
                         `}
                     </div>
@@ -63,7 +63,7 @@ export default async function Home() {
         if (twoFactorButton) {
             twoFactorButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                history.pushState(null, '', '/two-factor'); // URL 변경
+                history.pushState(null, '', '#/two-factor'); // URL 변경
                 import('../router.js').then((module) => {
                     module.router(); // SPA 라우터로 두 팩터 페이지 렌더링
                 });

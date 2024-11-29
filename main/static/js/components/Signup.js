@@ -37,7 +37,7 @@ export default function Signup() {
 
                     if (response.message === 'Signup successful') {
                         alert('Signup successful! Please log in.');
-                        window.location.href = '/login'; // 로그인 페이지로 리다이렉트
+                        window.location.href = '#/login'; // 로그인 페이지로 리다이렉트
                     }
                 } catch (error) {
                     console.error('Signup failed:', error);
