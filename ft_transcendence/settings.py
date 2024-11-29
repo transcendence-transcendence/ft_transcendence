@@ -185,4 +185,58 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(os.path.expanduser('~'))
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 정적 파일을 저장할 디렉터리 경로 설정
+STATIC_ROOT = os.path.join(os.path.expanduser('~'), 'data', 'static')
+
+
+# 여기서부터 작업함.
+# Add these settings
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Add MIME type configuration
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+# Add content type for specific file extensions
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
+mimetypes.add_type("text/javascript", ".js", True)
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+CSRF_TRUSTED_ORIGINS = ['https://127.0.0.1']
+INSTALLED_APPS += [
+    'corsheaders',  # corsheaders 추가
+]
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    *MIDDLEWARE,
+]
+CORS_ALLOW_HEADERS = [
+    'Authorization',
+    'X-CSRFToken',
+    'Content-Type',
+]
+# 허용할 CORS 도메인 설정
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8080",  # SPA가 실행되는 도메인
+    "https://127.0.0.1",
+]
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8080',
+    'https://127.0.0.1',
+]
+# 추가 옵션 (필요에 따라 설정)
+CORS_ALLOW_CREDENTIALS = True  # 쿠키를 포함한 인증 정보를 전달하도록 허용
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_NAME = 'sessionid'
+CORS_ALLOW_ALL_ORIGINS = True
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]

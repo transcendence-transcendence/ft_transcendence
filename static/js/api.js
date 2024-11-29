@@ -1,4 +1,4 @@
-const BASE_URL = 'http://127.0.0.1:8080/api'; // 명시적으로 URL 스키마 추가
+const BASE_URL = 'https://127.0.0.1/api'; // 명시적으로 URL 스키마 추가
 
 export async function apiGet(endpoint) {
     const csrfToken = document.cookie
@@ -17,7 +17,7 @@ export async function apiGet(endpoint) {
         ?.split('=')[1]; // Session ID from cookies
 
     try {
-        const response = await fetch('/api/auth/status', {
+        const response = await fetch(`${BASE_URL}/auth/status`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

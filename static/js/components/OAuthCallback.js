@@ -1,5 +1,5 @@
 const CLIENT_ID = 'u-s4t2ud-76b5fc7299ec7d4148ff001998639910bf355419b559c8539a7f3e20f4280725';
-const REDIRECT_URI = 'http://127.0.0.1:8080/api/oauth/callback';
+const REDIRECT_URI = 'https://127.0.0.1/api/oauth/callback';
 const AUTHORIZATION_URL = 'https://api.intra.42.fr/oauth/authorize';
 
 export function startOAuthFlow() {

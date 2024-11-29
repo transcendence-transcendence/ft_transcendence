@@ -29,5 +29,5 @@ urlpatterns = [
     path('api/logout', logout_view, name='logout_api'),
 
     # SPA 라우팅
-    path('', spa_view, name='spa_home'),
+    # path('', spa_view, name='spa_home'),
 ]

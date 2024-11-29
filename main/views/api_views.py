@@ -25,7 +25,7 @@ load_dotenv(override=True)  # override=True를 추가하여 강제 재로드
 User = get_user_model()
 CLIENT_ID = config('CLIENT_ID')
 CLIENT_SECRET = config('CLIENT_SECRET')
-REDIRECT_URI = "http://127.0.0.1:8080/api/oauth/callback"
+REDIRECT_URI = "https://127.0.0.1/api/oauth/callback"
 TOKEN_URL = "https://api.intra.42.fr/oauth/token"
 
 def check_auth(view_func):
