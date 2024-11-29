@@ -196,6 +196,7 @@ function initializeGame(roomName, currentUser) {
 
         if (data.type === 'start_game') {
             isGameStarted = true;
+            readyButton.style.display = 'none';
             waitMessageDiv.style.display = 'none';
         }
 
@@ -205,6 +206,7 @@ function initializeGame(roomName, currentUser) {
         }
 
         if (data.type === 'game_over') {
+            gameSocket.close();
             alert(data.winner + '가 5점에 도달하여 승리하였습니다!');
             window.location.hash = '#/';
         }

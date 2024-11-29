@@ -282,7 +282,7 @@ body {
 }
 
 /* 닉네임 버튼 스타일 */
-.nickname-buttons {
+/* .nickname-buttons {
     display: flex;
     justify-content: center;
     gap: 20px;
@@ -301,7 +301,7 @@ body {
 
 .nickname-button:hover {
     background-color: #3949ab;
-}
+} */
 
 /* 새로운 스타일 추가 */
 .team.eliminated {
@@ -325,14 +325,14 @@ body {
     height: 100%;
 }
 
-.game-overlay {
+.game-overlay_local {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     padding: 20px;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
     z-index: 1000;
 }
@@ -342,7 +342,9 @@ body {
     font-weight: bold;
     color: #fff;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px 20px;
+    border-radius: 5px;
 }
 
 #waitMessage {

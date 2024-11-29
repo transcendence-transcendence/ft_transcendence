@@ -17,7 +17,9 @@ export default async function TournamentGame() {
 
     const template = `
         <div class="game-container">
-            <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
+            <div class="game-overlay_local">
+                <div id="scoreBoard">플레이어 1: 0 | 플레이어 2: 0</div>
+            </div>
             <div id="gameCanvas"></div>
         </div>
     `;

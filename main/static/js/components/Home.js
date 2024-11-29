@@ -1,4 +1,4 @@
-import { apiGet } from '../api.js';
+import { apiGet, apiPost } from '../api.js';
 
 export default async function Home() {
     let user = null;
@@ -42,39 +42,48 @@ export default async function Home() {
         </div>
     `;
 
-    // 이벤트 리스너 설정
+    // DOM 업데이트 후 이벤트 등록을 위해 반환된 템플릿을 비동기로 실행
     setTimeout(() => {
-        const logoutButton = document.getElementById('logout-button');
-        const twoFactorButton = document.getElementById('two-factor-button');
         const oauthButton = document.getElementById('oauth-button');
+        const twoFactorButton = document.getElementById('two-factor-button');
+        const logoutButton = document.getElementById('logout-button');
 
+        // OAuth 버튼 이벤트 등록
+        if (oauthButton) {
+            oauthButton.addEventListener('click', () => {
+                import('./OAuthCallback.js')
+                    .then((module) => {
+                        module.startOAuthFlow();
+                    })
+                    .catch((err) => console.error('Failed to start OAuth flow:', err));
+            });
+        }
+
+        // 2FA 버튼 이벤트 등록
+        if (twoFactorButton) {
+            twoFactorButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                history.pushState(null, '', '/two-factor'); // URL 변경
+                import('../router.js').then((module) => {
+                    module.router(); // SPA 라우터로 두 팩터 페이지 렌더링
+                });
+            });
+        }
+
+        // Logout 버튼 이벤트 등록
         if (logoutButton) {
             logoutButton.addEventListener('click', async () => {
                 try {
-                    await apiGet('/auth/logout');
-                    window.location.reload();
-                } catch (error) {
-                    console.error('Logout failed:', error);
-                }
-            });
-        }
-
-        if (twoFactorButton) {
-            twoFactorButton.addEventListener('click', async () => {
-                try {
-                    const response = await apiGet('/auth/request-otp');
-                    if (response.status === 'success') {
-                        alert('2FA verification email has been sent. Please check your email.');
+                    const response = await apiPost('/logout', {}); // 로그아웃 호출
+                    if (response.message === 'Logout successful') {
+                        alert('You have been logged out.');
+                        window.location.reload(); // 홈 페이지로 리다이렉트하여 상태 초기화
+                        console.log(response);
                     }
                 } catch (error) {
-                    console.error('Failed to request OTP:', error);
+                    // console.error('Logout failed:', error);
+                    alert('Logout failed. Please try again.');
                 }
-            });
-        }
-
-        if (oauthButton) {
-            oauthButton.addEventListener('click', () => {
-                window.location.href = '/auth/oauth';
             });
         }
     }, 0);

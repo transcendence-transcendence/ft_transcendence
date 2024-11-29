@@ -198,6 +198,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         game_state = self.game_state
 
         if data['type'] == 'ready':
+            print(game_state)
+            print(room_users)
             player = data['player']
             ready = data['ready']
             game_state.set_ready(player, ready)
@@ -268,6 +270,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                 if self.room_group_name in room_users:
                     del room_users[self.room_group_name]
                 game_state.game_task = None
+                print(room_users)
+                print(game_states)
                 break
 
             if game_state.disconnection_time:
@@ -287,8 +291,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                     if self.room_group_name in room_users:
                         del room_users[self.room_group_name]
                     game_state.game_task = None
-                    # print(room_users)
-                    # print(game_states)
                     break
 
             await asyncio.sleep(1/60)  # 60FPS
