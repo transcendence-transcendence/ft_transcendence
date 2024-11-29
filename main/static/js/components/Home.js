@@ -27,7 +27,7 @@ export default async function Home() {
                             <button id="logout-button" class="btn btn-outline-danger mb-2">Logout</button>
                             ${isOtpVerified ? `
                                 <a href="#/tournament" data-link class="btn btn-primary mb-2">Local Game</a>
-                                <a href="#/game/room" data-link class="btn btn-info mb-2">Online Game</a>
+                                <a href="#/room" data-link class="btn btn-info mb-2">Online Game</a>
                             ` : `
                                 <button id="two-factor-button" class="btn btn-warning mb-2">Enable Email 2FA</button>
                             `}

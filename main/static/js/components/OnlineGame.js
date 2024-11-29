@@ -25,8 +25,7 @@ export default async function OnlineGame() {
         return '<div>Error: Failed to load game</div>';
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomName = urlParams.get('room') || 'default';
+    const roomName = window.location.hash.split('/')[2] || 'default';
 
     const template = `
     <div class="game-container">

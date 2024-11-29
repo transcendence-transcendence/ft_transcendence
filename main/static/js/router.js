@@ -5,12 +5,20 @@ const routes = {
     '#/two-factor': 'TwoFactorAuth',
     '#/tournament': 'Tournament',
     '#/tournament/game': 'TournamentGame',
-    '#/game/room': 'OnlineGame',
+    '#/room': 'Room',
+    '#/online': 'OnlineGame'
 };
 
 export async function router() {
-    const hash = window.location.hash || '#/';
-    const componentName = routes[hash] || 'Home';
+    const hash = window.location.hash;
+    let componentName;
+
+    // 동적 라우트 처리
+    if (hash.startsWith('#/online/')) {
+        componentName = 'OnlineGame';
+    } else {
+        componentName = routes[hash] || 'Home';
+    }
 
     try {
         const module = await import(`./components/${componentName}.js`);

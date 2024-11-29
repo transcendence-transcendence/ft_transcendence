@@ -10,7 +10,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 class GameState:
     def __init__(self):
         self.players = {}
-        self.ball = {'x': 400, 'y': 200, 'dx': 5, 'dy': 5}
+        self.ball = {'x': 400, 'y': 200, 'dx': 8, 'dy': 8}
         self.paddle_width = 10
         self.paddle_height = 100
         self.canvas_width = 800
@@ -19,7 +19,7 @@ class GameState:
         self.game_task = None
         self.player1 = None
         self.player2 = None
-        self.paddle_speed = 7  # 패들의 속도
+        self.paddle_speed = 12  # 패들의 속도
         self.disconnection_time = None
         self.locked = False
 
