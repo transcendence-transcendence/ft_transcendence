@@ -103,7 +103,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ft_transcendence.wsgi.application'
+# WSGI_APPLICATION = 'ft_transcendence.wsgi.application'
 # ASGI_APPLICATION = 'ft_transcendence.wsgi.application'
 
 # Database
