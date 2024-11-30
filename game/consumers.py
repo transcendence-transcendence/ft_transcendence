@@ -114,13 +114,26 @@ class GameState:
 game_states = {}
 room_users = {}
 
+# 플레이어가 참여 중인 방을 추적
+active_players = {}
+
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'game_%s' % self.room_name
-
+     
         # 현재 접속한 사용자 이름 가져오기
         self.username = self.scope['user'].username
+
+        # 플레이어가 이미 다른 방에 참여 중인지 확인
+        if self.username in active_players:
+            # 다른 방에 참여 중인 경우
+            await self.send(text_data=json.dumps({
+                'type': 'already_in_room',
+                'message': f"현재 다른 방({active_players[self.username]})에 참여 중입니다. 게임을 종료한 후 다시 시도하세요."
+            }))
+            await self.close()
+            return
 
         # 방에 대한 사용자 목록 초기화
         if self.room_group_name not in room_users:
@@ -133,6 +146,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         if self.room_group_name not in game_states:
             game_states[self.room_group_name] = GameState()
 
+        # room_group_name 에 해당하는 game_state 가져오기.
         self.game_state = game_states[self.room_group_name]
 
         await self.accept()
@@ -150,14 +164,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }))
                 await self.close()
                 return
+            
+        # 플레이어를 활성 플레이어 목록에 추가
+        active_players[self.username] = self.room_name
 
         # 그룹에 연결
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-
-        # await self.accept()
 
         # 현재 저장된 게임 상태를 클라이언트로 전송하여 복원
         await self.send(text_data=json.dumps({
@@ -168,7 +183,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         # 두 플레이어의 정보 전달 (players_ready 이벤트)
         if self.game_state.player1 and self.game_state.player2:
             self.game_state.locked = True
-            print(self.game_state.locked)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -178,7 +192,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-    async def disconnect(self, close_code):
+    async def disconnect(self):
         # 그룹에서 연결 해제
         await self.channel_layer.group_discard(
             self.room_group_name,
@@ -193,13 +207,15 @@ class GameConsumer(AsyncWebsocketConsumer):
         if all(not player_data['connected'] for player_data in self.game_state.players.values()):
             self.game_state.disconnection_time = time.time()
 
+        # active_players에서 해당 플레이어 삭제
+        if self.username in active_players:
+            del active_players[self.username]
+
     async def receive(self, text_data):
         data = json.loads(text_data)
         game_state = self.game_state
 
         if data['type'] == 'ready':
-            print(game_state)
-            print(room_users)
             player = data['player']
             ready = data['ready']
             game_state.set_ready(player, ready)
@@ -221,13 +237,10 @@ class GameConsumer(AsyncWebsocketConsumer):
             player = data['player']
             direction = data['direction']
             game_state.update_player_direction(player, direction)
-            print(player)
-            print(direction)
 
         elif data['type'] == 'paddle_stop':
             player = data['player']
             game_state.update_player_direction(player, 0)
-            print(player)
 
     async def game_loop(self):
         game_state = self.game_state
