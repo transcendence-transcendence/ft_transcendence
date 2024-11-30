@@ -1,6 +1,5 @@
 all:
 	mkdir -p $(HOME)/data/postgre
-	mkdir -p $(HOME)/data/staticfiles
 	docker-compose -f ./docker-compose.yml up --detach --build
 
 re:

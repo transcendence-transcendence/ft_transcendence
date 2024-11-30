@@ -4,8 +4,8 @@ export default function TwoFactorAuth() {
     return `
     <div class="two-factor-auth">
         <h2>Two-Factor Authentication</h2>
-        <p>A one-time password (OTP) has been sent to your email. If you haven't received it, click below to resend.</p>
-        <button id="resend-otp-button">Resend OTP</button>
+        <p>A one-time password (OTP) has been sent to your email. If you haven't received it, click below to send.</p>
+        <button id="send-otp-button">Send OTP</button>
         <form id="two-factor-form">
             <label for="otp">Enter OTP:</label>
             <input type="text" id="otp" name="otp" required>
@@ -19,12 +19,12 @@ export default function TwoFactorAuth() {
 
 setTimeout(() => {
     const twoFactorForm = document.getElementById('two-factor-form');
-    const resendOtpButton = document.getElementById('resend-otp-button');
+    const sendOtpButton = document.getElementById('send-otp-button');
     const errorContainer = document.getElementById('error-messages');
     const successContainer = document.getElementById('success-messages');
 
-    if (resendOtpButton) {
-        resendOtpButton.addEventListener('click', async (e) => {
+    if (sendOtpButton) {
+        sendOtpButton.addEventListener('click', async (e) => {
             e.preventDefault();
             try {
                 const response = await apiPost('/two-factor/generate', {});

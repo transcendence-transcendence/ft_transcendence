@@ -1,4 +1,5 @@
-const BASE_URL = 'https://127.0.0.1/api'; // 명시적으로 URL 스키마 추가
+const HOST = localStorage.getItem('host') || '127.0.0.1'; // 기본값 제공
+const BASE_URL = `https://${HOST}/api`; // 동적으로 BASE_URL 생성
 
 export async function apiPost(endpoint, data) {
     const csrfToken = document.cookie

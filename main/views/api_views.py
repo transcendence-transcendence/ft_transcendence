@@ -25,7 +25,8 @@ load_dotenv(override=True)  # override=True를 추가하여 강제 재로드
 User = get_user_model()
 CLIENT_ID = config('CLIENT_ID')
 CLIENT_SECRET = config('CLIENT_SECRET')
-REDIRECT_URI = "https://127.0.0.1/api/oauth/callback"
+LOCAL_HOST_IP = config('LOCAL_HOST_IP')
+REDIRECT_URI = f"https://{LOCAL_HOST_IP}/api/oauth/callback"
 TOKEN_URL = "https://api.intra.42.fr/oauth/token"
 
 def check_auth(view_func):
@@ -96,6 +97,11 @@ def callback_view_api(request):
     code = request.GET.get('code')
     if not code:
         return Response({'error': 'Authorization code not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    print(CLIENT_ID)
+    print(CLIENT_SECRET)
+    print(code)
+    print(REDIRECT_URI)
 
     # Exchange authorization code for an access token
     token_response = requests.post(
@@ -238,8 +244,8 @@ def logout_view(request):
     response = JsonResponse({'message': 'Logout successful'})
 
     # 쿠키 삭제 (쿠키의 도메인과 경로를 정확히 지정)
-    response.delete_cookie('access_token', path='/', domain='127.0.0.1')
-    response.delete_cookie('sessionid', path='/', domain='127.0.0.1')
-    response.delete_cookie('csrftoken', path='/', domain='127.0.0.1')
+    response.delete_cookie('access_token', path='/', domain=f'{LOCAL_HOST_IP}')
+    response.delete_cookie('sessionid', path='/', domain=f'{LOCAL_HOST_IP}')
+    response.delete_cookie('csrftoken', path='/', domain=f'{LOCAL_HOST_IP}')
     return response
 
