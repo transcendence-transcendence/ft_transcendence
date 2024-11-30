@@ -42,7 +42,6 @@ def check_auth(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-@method_decorator(csrf_exempt, name='dispatch')
 @api_view(['POST'])
 def login_api(request):
     username = request.data.get('username')
@@ -69,9 +68,9 @@ def login_api(request):
             key='access_token',
             value=access_token,
             httponly=True,  # JavaScript에서 쿠키 접근 금지
-            secure=False,   # HTTPS 환경에서는 True로 설정
+            secure=True,   # HTTPS 환경에서는 True로 설정
             samesite='Lax', # CSRF 방지 관련 설정
-            max_age=timedelta(minutes=30).total_seconds()
+            max_age=timedelta(minutes=120).total_seconds()
         )
         return response
     else:
@@ -174,8 +173,8 @@ def generate_otp(request):
     send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email])
 
     return Response({'message': 'OTP sent to your email.'}, status=status.HTTP_200_OK)
+
 @check_auth
-@csrf_exempt
 @api_view(['POST'])
 def verify_otp(request):
     user = request.user

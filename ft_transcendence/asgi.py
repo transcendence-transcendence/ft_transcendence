@@ -11,8 +11,6 @@ import game.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ft_transcendence.settings')
 
-
-
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
@@ -21,10 +19,3 @@ application = ProtocolTypeRouter({
         )
     ),
 })
-
-# application = ProtocolTypeRouter({
-#     "http": get_asgi_application(),
-#     "websocket": AllowedHostsOriginValidator(
-#             AuthMiddlewareStack(URLRouter(game.routing.websocket_urlpatterns))
-#         ),
-# })

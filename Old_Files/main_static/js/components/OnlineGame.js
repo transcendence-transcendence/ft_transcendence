@@ -25,15 +25,7 @@ export default async function OnlineGame() {
         return '<div>Error: Failed to load game</div>';
     }
 
-    const roomName = (() => {
-        const hashRoomName = window.location.hash.split('/')[2] || 'default';
-        const isValidRoomName = /^[a-zA-Z0-9_]+$/.test(hashRoomName); // 영어, 숫자, 밑줄만 허용
-        if (!isValidRoomName) {
-            alert("Room name can only contain English letters, numbers, and underscores.");
-            return 'default'; // 유효하지 않을 경우 기본값 설정
-        }
-        return hashRoomName;
-    })();    
+    const roomName = window.location.hash.split('/')[2] || 'default';
 
     const template = `
     <div class="game-container">
