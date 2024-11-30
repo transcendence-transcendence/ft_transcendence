@@ -1,5 +1,4 @@
-const HOST = localStorage.getItem('host') || '127.0.0.1'; // 기본값 제공
-const BASE_URL = `https://${HOST}/api`; // 동적으로 BASE_URL 생성
+const BASE_URL = `https://${window.location.hostname}/api`; // 동적으로 BASE_URL 생성
 
 export async function apiPost(endpoint, data) {
     const csrfToken = document.cookie
