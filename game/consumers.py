@@ -128,10 +128,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         # 플레이어가 이미 다른 방에 참여 중인지 확인
         if self.username in active_players:
             # 다른 방에 참여 중인 경우
-            await self.send(text_data=json.dumps({
-                'type': 'already_in_room',
-                'message': f"현재 다른 방({active_players[self.username]})에 참여 중입니다. 게임을 종료한 후 다시 시도하세요."
-            }))
             await self.close()
             return
 
@@ -158,13 +154,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             self.game_state.disconnection_time = None
         else:
             if not self.game_state.add_player(self.username):
-                await self.send(text_data=json.dumps({
-                    'type': 'already_in_game',
-                    'message': '게임이 진행중입니다.'
-                }))
                 await self.close()
                 return
-            
+
         # 플레이어를 활성 플레이어 목록에 추가
         active_players[self.username] = self.room_name
 
@@ -192,7 +184,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-    async def disconnect(self):
+    async def disconnect(self, code):
         # 그룹에서 연결 해제
         await self.channel_layer.group_discard(
             self.room_group_name,
@@ -283,8 +275,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 if self.room_group_name in room_users:
                     del room_users[self.room_group_name]
                 game_state.game_task = None
-                print(room_users)
-                print(game_states)
                 break
 
             if game_state.disconnection_time:

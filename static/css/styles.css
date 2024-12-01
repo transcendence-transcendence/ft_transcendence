@@ -43,7 +43,7 @@ body {
   }
   
   a[data-link] {
-    color: #007bff;
+    color: white;
     text-decoration: none;
     cursor: pointer;
   }

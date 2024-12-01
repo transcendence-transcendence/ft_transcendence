@@ -3,30 +3,30 @@ from django.db import models
 import pyotp, base64
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, username=None, password=None, **extra_fields):
-        if not email:
-            raise ValueError('Users must have an email address')
-        email = self.normalize_email(email)
-        user = self.model(email=email, username=username, **extra_fields)
-        user.set_password(password)  # 비밀번호 해시
-        user.save(using=self._db)
-        return user
+    # def create_user(self, email, username=None, password=None, **extra_fields):
+    #     if not email:
+    #         raise ValueError('Users must have an email address')
+    #     email = self.normalize_email(email)
+    #     user = self.model(email=email, username=username, **extra_fields)
+    #     user.set_password(password)  # 비밀번호 해시
+    #     user.save(using=self._db)
+    #     return user
 
-    def create_superuser(self, email, username=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
+    # def create_superuser(self, email, username=None, password=None, **extra_fields):
+    #     extra_fields.setdefault('is_staff', True)
+    #     extra_fields.setdefault('is_superuser', True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+    #     if extra_fields.get('is_staff') is not True:
+    #         raise ValueError('Superuser must have is_staff=True.')
+    #     if extra_fields.get('is_superuser') is not True:
+    #         raise ValueError('Superuser must have is_superuser=True.')
 
-        return self.create_user(email, username, password, **extra_fields)
+    #     return self.create_user(email, username, password, **extra_fields)
 
     def get_by_natural_key(self, username):
         return self.get(**{self.model.USERNAME_FIELD: username})  # USERNAME_FIELD에 따라 사용자 검색
 
-# 사용자 모델
+# 사용자 모델                       
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, max_length=255)  # 이메일 필드
     password = models.CharField(max_length=255)             # 암호화된 비밀번호
@@ -39,8 +39,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()  # 커스텀 매니저
 
-    USERNAME_FIELD = 'username'  # 로그인 필드 설정
-    REQUIRED_FIELDS = ['email']  # 추가 필수 필드 설정
+    # 로그인 시 사용할 필드 설정
+    USERNAME_FIELD = 'username'  # 기본적으로 `username` 필드를 사용하여 로그인
+
+    # 사용자 생성 시 필수로 요구할 추가 필드 설정
+    REQUIRED_FIELDS = ['email']  # 슈퍼유저 생성 시 `email`을 필수로 요구
 
     def __str__(self):
         return self.username or self.email

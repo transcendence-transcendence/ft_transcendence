@@ -4,14 +4,14 @@ export default async function Room() {
     try {
         const user = await apiPost('/auth/status', {});
         if (!user?.is_authenticated || !user?.is_otp_verified) {
-            history.pushState(null, '', '/');
-            window.dispatchEvent(new Event('popstate'));
+            // history.pushState(null, '', '/');
+            // window.dispatchEvent(new Event('popstate'));
             return '';
         }
     } catch (error) {
         console.error('Authentication check failed:', error);
-        history.pushState(null, '', '/');
-        window.dispatchEvent(new Event('popstate'));
+        // history.pushState(null, '', '/');
+        // window.dispatchEvent(new Event('popstate'));
         return '';
     }
 

@@ -1,5 +1,4 @@
 all:
-	mkdir -p $(HOME)/data/postgre
 	docker-compose -f ./docker-compose.yml up --detach --build
 
 re:
@@ -13,7 +12,6 @@ clean:
 fclean:
 	docker-compose -f ./docker-compose.yml down -v
 	docker system prune --all --force --volumes
-	rm -rf $(HOME)/data
 
 info:
 		# IMG
@@ -24,5 +22,7 @@ info:
 		docker network ls
 		# volumes
 		docker volume ls
+
+		docker info | grep -i runtime
 
 .PHONY	: all build up down re clean fclean info

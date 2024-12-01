@@ -1,23 +1,21 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.tokens import AccessToken
 from django.contrib.auth import authenticate, login
 from rest_framework import status
 from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
-from django.contrib.messages import get_messages
 from ..forms import CustomUserCreationForm
 import requests
+from django.shortcuts import redirect
 from decouple import config
-from django.contrib.auth.decorators import login_required
 import pyotp
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import logout
 from django.http import JsonResponse
-from django.http import HttpResponse
 from functools import wraps
 from dotenv import load_dotenv
 load_dotenv(override=True)  # override=True를 추가하여 강제 재로드
@@ -29,18 +27,33 @@ LOCAL_HOST_IP = config('LOCAL_HOST_IP')
 REDIRECT_URI = f"https://{LOCAL_HOST_IP}/api/oauth/callback"
 TOKEN_URL = "https://api.intra.42.fr/oauth/token"
 
+
 def check_auth(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         # 세션 또는 access_token 확인
-        print(request.COOKIES.get('access_token'))
-        if not request.user.is_authenticated or not request.COOKIES.get('access_token'):
-            print("Authentication required")
+        access_token = request.COOKIES.get('access_token')
+
+        if not request.user.is_authenticated or not access_token:
             return JsonResponse({
                 'error': 'Authentication required',
                 'detail': 'No valid session or access token found.'
             }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            # access_token을 검증
+            token = AccessToken(access_token)
+            # 토큰이 유효하면 view_func 호출
+        except (TokenError, InvalidToken) as e:
+            # 토큰 검증 실패시
+            return JsonResponse({
+                'error': 'Invalid or expired token',
+                'detail': str(e)
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # 토큰 검증 성공하면 원래의 view 함수 실행
         return view_func(request, *args, **kwargs)
+
     return wrapper
 
 @api_view(['POST'])
@@ -81,7 +94,7 @@ def login_api(request):
 def signup_api(request):
     form = CustomUserCreationForm(request.data)  # CustomUserCreationForm에 데이터 전달
 
-    if form.is_valid():
+    if form.is_valid(): # form 클래스에 저장된 필드에 입력된 데이터가 유효한지 확인.
         form.save()  # 유효한 데이터를 저장
         return Response({'message': 'Signup successful'}, status=status.HTTP_201_CREATED)
     else:
@@ -89,19 +102,12 @@ def signup_api(request):
         errors = {field: [error['message'] for error in error_list] for field, error_list in form.errors.get_json_data().items()}
         return Response({'error': 'Signup failed', 'details': errors}, status=status.HTTP_400_BAD_REQUEST)
 
-from django.shortcuts import redirect
-
 @api_view(['GET'])
 def callback_view_api(request):
     # Get the authorization code from the URL
     code = request.GET.get('code')
     if not code:
         return Response({'error': 'Authorization code not provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-    print(CLIENT_ID)
-    print(CLIENT_SECRET)
-    print(code)
-    print(REDIRECT_URI)
 
     # Exchange authorization code for an access token
     token_response = requests.post(
@@ -148,7 +154,6 @@ def callback_view_api(request):
         user.save()
 
     login(request, user)
-    print(user)
 
     # Issue JWT token
     refresh = RefreshToken.for_user(user)
@@ -229,7 +234,6 @@ def user_status(request):
 
     except Exception as e:
         # Handle unexpected errors
-        print(f"Error in user_status: {e}")
         return Response({
             'error': 'An unexpected error occurred.',
             'detail': str(e),

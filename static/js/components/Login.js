@@ -16,10 +16,8 @@ export default function Login() {
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const formData = new FormData(loginForm);
-                console.log(Object.fromEntries(formData));
                 try {
                     const response = await apiPost('/login', Object.fromEntries(formData));
-                    console.log(response);
 
                     if (response.message === 'Login successful') {
                         alert('Login successful!');

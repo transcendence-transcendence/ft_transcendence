@@ -81,7 +81,6 @@ export default async function Home() {
                         console.log(response);
                     }
                 } catch (error) {
-                    // console.error('Logout failed:', error);
                     alert('Logout failed. Please try again.');
                 }
             });

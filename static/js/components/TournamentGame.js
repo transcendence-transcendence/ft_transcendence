@@ -4,14 +4,14 @@ export default async function TournamentGame() {
     try {
         const user = await apiPost('/auth/status', {});
         if (!user?.is_authenticated || !user?.is_otp_verified) {
-            history.pushState(null, '', '/');
-            window.dispatchEvent(new Event('popstate'));
+            // history.pushState(null, '', '/');
+            // window.dispatchEvent(new Event('popstate'));
             return '';
         }
     } catch (error) {
         console.error('Authentication check failed:', error);
-        history.pushState(null, '', '/');
-        window.dispatchEvent(new Event('popstate'));
+        // history.pushState(null, '', '/');
+        // window.dispatchEvent(new Event('popstate'));
         return '';
     }
 
@@ -96,8 +96,7 @@ function initializeGame() {
         new THREE.Vector3(-TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2),
         new THREE.Vector3(TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2),
         new THREE.Vector3(TABLE_WIDTH/2, 0.26, TABLE_DEPTH/2),
-        new THREE.Vector3(-TABLE_WIDTH/2, 0.26, TABLE_DEPTH/2),
-        new THREE.Vector3(-TABLE_WIDTH/2, 0.26, -TABLE_DEPTH/2)
+        new THREE.Vector3(-TABLE_WIDTH/2, 0.26, TABLE_DEPTH/2)
     ]);
     const borderLine = new THREE.Line(borderGeometry, borderMaterial);
     scene.add(borderLine);
@@ -288,8 +287,6 @@ function initializeGame() {
         
         ball.position.x += ballDX;
         ball.position.z += ballDY;
-        ball.rotation.x += 0.05;
-        ball.rotation.z += 0.05;
 
         detectCollision();
         
